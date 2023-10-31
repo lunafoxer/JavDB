@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Authors>Karevin</Authors>
+    <Copyright>Copyright © $(Authors)</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="JavDB.Film.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="JavDB.Film.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
+  </ItemGroup>
+
+</Project>
