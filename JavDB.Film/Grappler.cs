@@ -158,6 +158,7 @@ namespace JavDB.Film
                             break;
                         case "演員:":
                             var da = it.SelectNodes("span");
+                            film.Actor = new List<FilmActor>();
                             for (int vi = 0; vi < da[0].SelectNodes("a")?.Count; vi++)
                             {
                                 FilmActor act = new FilmActor();
@@ -193,6 +194,7 @@ namespace JavDB.Film
                 film.Magnet = film.Magnet.Replace(dma.SelectSingleNode(mConfig.grab.index.clearMagnet).OuterHtml, "");
                 film.Magnet = film.Magnet.Replace("data-clipboard-text=", baseString.magent_tag + "value= ");
             }
+            film.GrabTime = DateTime.Now.ToString();
         }
 
         public bool GrabPage(string pageUrl, out List<FilmInformation> films, bool simple = true)

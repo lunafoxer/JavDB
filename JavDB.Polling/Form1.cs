@@ -148,16 +148,7 @@ namespace JavDB.Polling
         {
             try
             {
-                mConfig.Series = txtSeries.Text.ToUpper();
-                mConfig.Size = (int)numSize.Value;
-                mConfig.Start = int.Parse(txtStart.Text);
-                mConfig.End = int.Parse(txtEnd.Text);
-                mConfig.Delay = (int)numDelay.Value;
-                mConfig.Mode = (byte)(rbStandard.Checked ? 0 : rbSimple.Checked ? 1 : 2);
-                mConfig.Score = (double)numScore.Value;
-                mConfig.ExpirationTime = (ushort)numExpirationTime.Value;
-                mConfig.Save(Application.StartupPath + "JavDB.Polling.json");
-
+                saveConfig();
                 int len = 1 + mConfig.End - mConfig.Start;
                 if (len > 0)
                 {
@@ -447,6 +438,7 @@ namespace JavDB.Polling
         {
             try
             {
+                saveConfig();
                 listInfo.Items.Clear();
                 mFilms = new List<FilmInformation>();
                 progressBar1.Value = 0;
@@ -649,6 +641,7 @@ namespace JavDB.Polling
         {
             if (File.Exists(fileName))
             {
+                saveConfig();
                 listInfo.Items.Clear();
                 mFilms = new List<FilmInformation>();
                 progressBar1.Value = 0;
@@ -919,6 +912,25 @@ namespace JavDB.Polling
                     MessageBox.Show("复制成功！", "复制", MessageBoxButtons.OK, MessageBoxIcon.Question);
 
                 }
+            }
+            catch (Exception e1)
+            {
+                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+        private void saveConfig()
+        {
+            try
+            {
+                mConfig.Series = txtSeries.Text.ToUpper();
+                mConfig.Size = (int)numSize.Value;
+                mConfig.Start = int.Parse(txtStart.Text);
+                mConfig.End = int.Parse(txtEnd.Text);
+                mConfig.Delay = (int)numDelay.Value;
+                mConfig.Mode = (byte)(rbStandard.Checked ? 0 : rbSimple.Checked ? 1 : 2);
+                mConfig.Score = (double)numScore.Value;
+                mConfig.ExpirationTime = (ushort)numExpirationTime.Value;
+                mConfig.Save(Application.StartupPath + "JavDB.Polling.json");
             }
             catch (Exception e1)
             {
