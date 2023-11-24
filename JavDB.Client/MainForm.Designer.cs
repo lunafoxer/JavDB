@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             btnCopy = new Button();
@@ -36,6 +37,8 @@
             listInfo = new ListView();
             columnHeader1 = new ColumnHeader();
             columnHeader2 = new ColumnHeader();
+            contextMenuStrip1 = new ContextMenuStrip(components);
+            menuItemOpen = new ToolStripMenuItem();
             btnOutputVsMeta = new Button();
             btnGrab = new Button();
             chbCacheFirst = new CheckBox();
@@ -48,6 +51,7 @@
             tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)picPoster).BeginInit();
             ((System.ComponentModel.ISupportInitialize)picCover).BeginInit();
+            contextMenuStrip1.SuspendLayout();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
             tabPage3.SuspendLayout();
@@ -122,6 +126,7 @@
             // listInfo
             // 
             listInfo.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2 });
+            listInfo.ContextMenuStrip = contextMenuStrip1;
             listInfo.Font = new Font("Microsoft YaHei UI", 10.5F, FontStyle.Regular, GraphicsUnit.Point);
             listInfo.FullRowSelect = true;
             listInfo.GridLines = true;
@@ -143,6 +148,20 @@
             // 
             columnHeader2.Text = "值";
             columnHeader2.Width = 350;
+            // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemOpen });
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(125, 26);
+            contextMenuStrip1.Opening += contextMenuStrip1_Opening;
+            // 
+            // menuItemOpen
+            // 
+            menuItemOpen.Name = "menuItemOpen";
+            menuItemOpen.Size = new Size(124, 22);
+            menuItemOpen.Text = "打开链接";
+            menuItemOpen.Click += menuItemOpen_Click;
             // 
             // btnOutputVsMeta
             // 
@@ -182,6 +201,7 @@
             // 
             // txtUID
             // 
+            txtUID.CharacterCasing = CharacterCasing.Upper;
             txtUID.Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
             txtUID.Location = new Point(6, 6);
             txtUID.MaxLength = 32;
@@ -245,11 +265,13 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "JavDB";
             FormClosed += MainForm_FormClosed;
+            Shown += MainForm_Shown;
             tabControl1.ResumeLayout(false);
             tabPage1.ResumeLayout(false);
             tabPage1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)picPoster).EndInit();
             ((System.ComponentModel.ISupportInitialize)picCover).EndInit();
+            contextMenuStrip1.ResumeLayout(false);
             tabPage2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)webView21).EndInit();
             tabPage3.ResumeLayout(false);
@@ -275,5 +297,7 @@
         private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView22;
         private Button btnCopy;
+        private ContextMenuStrip contextMenuStrip1;
+        private ToolStripMenuItem menuItemOpen;
     }
 }

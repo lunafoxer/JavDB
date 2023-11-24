@@ -11,6 +11,8 @@ using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text.Json;
 using System.Windows.Forms;
+using static System.Formats.Asn1.AsnWriter;
+using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.ListView;
 
 namespace JavDB.Polling
@@ -22,6 +24,7 @@ namespace JavDB.Polling
         private List<FilmInformation>? mFilms;
         private bool mPolling = false;
         private int mPageValue = 1;
+        private string? m_PageUrl = null;
         private int mPage
         {
             get => mPageValue;
@@ -51,7 +54,6 @@ namespace JavDB.Polling
             InitializeComponent();
             try
             {
-
                 mGrap = new Grappler(Grappler.ReadFile(Application.StartupPath + "JavDB.Film.json"));
                 Config? config = JsonSerializer.Deserialize<Config>(Grappler.ReadFile(Application.StartupPath + "JavDB.Polling.json"), Grappler.SerializerOptions);
                 if (config != null)
@@ -67,19 +69,19 @@ namespace JavDB.Polling
             {
                 MessageBox.Show(ex.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 mConfig = new Config();
-                mGrap = new Grappler("{}");
             }
+            var cmp = new AutoCompleteStringCollection();
+            cmp.AddRange(mConfig.AutoComplete);
+            txtPageAuto.AutoCompleteCustomSource = cmp;
+            txtPageManual.AutoCompleteCustomSource = cmp;
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            txtSeries.Text = mConfig.Series;
-            numSize.Value = mConfig.Size;
-            txtStart.Text = mConfig.Start.ToString();
-            txtEnd.Text = mConfig.End.ToString();
             numDelay.Value = mConfig.Delay;
             numExpirationTime.Value = mConfig.ExpirationTime;
             txtURL.Text = mGrap.SRC;
+            txtURL2.Text = mGrap.SRC;
             if (mConfig.Mode == 0)
             {
                 rbStandard.Checked = true;
@@ -95,29 +97,49 @@ namespace JavDB.Polling
             numScore.Enabled = rbFliterScore.Checked;
             numScore.Value = (decimal)mConfig.Score;
         }
-        private delegate void progressValueChange(int value);
-        private void progressValueChangeF(int value)
+        private delegate void startPollingDelegate(bool value);
+        private void startPolling(bool value)
+        {
+            if (!value)
+            {
+                btnPageDown.Enabled = true;
+            }
+            tabControl1.Enabled = !value;
+            groupBox1.Enabled = tabControl1.Enabled;
+            listInfo.Enabled = !value;
+            btnSortScore.Enabled = !value;
+            btnSaveUIDList.Enabled = !value;
+            lblCount.Text = $"共 {(mFilms == null ? "0" : mFilms.Count)} 条";
+            statusLabel.Text = value ? "正在加载" : "已就绪";
+        }
+        private delegate void changeStatusDelegate(string value);
+        private void changeStatus(string value)
+        {
+            statusLabel.Text = value;
+        }
+        private delegate void progressValueChangeDelegate(int value);
+        private void progressValueChange(int value)
         {
             progressBar1.Value = value;
         }
-        private delegate void addItem(int index, string uid, string state);
-        private void addItemF(int index, string uid, string state)
+        private delegate void addItemDelegate(int index, string uid, string state, string score, string date, string title, string actors, string url, string flag);
+        private void addItem(int index, string uid, string state, string score, string date, string title, string actors, string url, string flag)
         {
             ListViewItem item = new ListViewItem((index + 1).ToString());
             item.SubItems.Add(uid);
             item.SubItems.Add(string.IsNullOrEmpty(state) ? "抓取中" : state);
-            item.SubItems.Add("");
-            item.SubItems.Add("");
-            item.SubItems.Add("");
-            item.SubItems.Add("");
-            item.SubItems.Add("");
-            item.SubItems.Add("");
+            item.SubItems.Add(score);
+            item.SubItems.Add(date);
+            item.SubItems.Add(title);
+            item.SubItems.Add(actors);
+            item.SubItems.Add(url);
+            item.SubItems.Add(flag);
             item.Selected = true;
             listInfo.Items.Add(item);
             listInfo.EnsureVisible(index);
         }
-        private delegate void updateItem(int index, string state, string score, string date, string title, string actors, string url, string flag);
-        private void updateItemF(int index, string state, string score, string date, string title, string actors, string url, string flag)
+        private delegate void updateItemDelegate(int index, string state, string score, string date, string title, string actors, string url, string flag);
+        private void updateItem(int index, string state, string score, string date, string title, string actors, string url, string flag)
         {
             listInfo.Items[index].SubItems[2].Text = state;
             listInfo.Items[index].SubItems[3].Text = score;
@@ -130,168 +152,17 @@ namespace JavDB.Polling
             listInfo.EnsureVisible(index);
         }
 
-        private void btnNextBatch_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                int Start = int.Parse(txtStart.Text);
-                int End = int.Parse(txtEnd.Text);
-                txtStart.Text = (End + 1).ToString();
-                txtEnd.Text = (End + End - Start + 1).ToString();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            }
-        }
-        private void btnStartPolling_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                saveConfig();
-                int len = 1 + mConfig.End - mConfig.Start;
-                if (len > 0)
-                {
-                    listInfo.Items.Clear();
-                    mFilms = new List<FilmInformation>();
-                    progressBar1.Value = 0;
-                    Application.DoEvents();
-                    Action<bool> startPolling = (value) =>
-                    {
-                        tabControl1.Enabled = !value;
-                        listInfo.Enabled = !value;
-                        groupBox1.Enabled = tabControl1.Enabled;
-                    };
-                    new Thread(() =>
-                    {
-                        mPolling = true;
-                        this.Invoke(startPolling, true);
-                        for (int i = 0; i < len; i++)
-                        {
-                            if (mPolling == false) break;
-                            int auid = i + mConfig.Start;
-                            string uid = $"{mConfig.Series}-{auid.ToString().PadLeft(mConfig.Size, '0')}";
-                            this.Invoke(new addItem(addItemF), i, uid, "抓取中");
-                            FilmInformation? film = new FilmInformation();
-                            try
-                            {
-                                string file = Path.Combine(mConfig.CachePath, uid.Split("-")[0], uid, uid + ".json");
-                                if (File.Exists(file))
-                                {
-                                    StreamReader sr = File.OpenText(file);
-                                    string cache = sr.ReadToEnd();
-                                    sr.Close();
-                                    film = FilmInformation.Convert(cache);
-                                    if (film == null)
-                                    {
-                                        film = new FilmInformation();
-                                        film.GrabTime = "1971-01-01 00:00:00";
-                                    }
-                                    DateTime dateTime;
-                                    DateTime.TryParse(film.GrabTime, out dateTime);
-                                    if (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds)
-                                    {
-                                        if (mConfig.Delay > 0 && i > 0)
-                                            Thread.Sleep(mConfig.Delay);
-                                        if (rbFliterScore.Checked)
-                                        {
-                                            film = mGrap.Grab(uid, (double)numScore.Value);
-                                        }
-                                        else
-                                        {
-                                            film = mGrap.Grab(uid, rbSimple.Checked);
-                                        }
-                                        string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!);
-                                        File.WriteAllText(file, film.ToString());
-                                        if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                    }
-                                    else if (film.Actor.Count == 0 && film.Category.Count == 0)
-                                    {
-                                        if (rbStandard.Checked || (rbFliterScore.Checked && double.Parse(film.Score) >= (double)numScore.Value))
-                                        {
-                                            if (mConfig.Delay > 0 && i > 0)
-                                                Thread.Sleep(mConfig.Delay);
-                                            if (rbStandard.Checked)
-                                            {
-                                                film = mGrap.Grab(uid);
-                                            }
-                                            else
-                                            {
-                                                mGrap.GrabDetail(ref film);
-                                            }
-                                            string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!);
-                                            File.WriteAllText(file, film.ToString());
-                                            if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    if (mConfig.Delay > 0 && i > 0)
-                                        Thread.Sleep(mConfig.Delay);
-                                    if (rbFliterScore.Checked)
-                                    {
-                                        film = mGrap.Grab(uid, (double)numScore.Value);
-                                    }
-                                    else
-                                    {
-                                        film = mGrap.Grab(uid, rbSimple.Checked);
-                                    }
-                                    if (film != null && film.UID == uid)
-                                    {
-                                        string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID);
-                                        MakeSureDirectoryPathExists(file);
-                                        File.WriteAllText(file, film.ToString());
-                                        if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                    }
-                                    else
-                                    {
-                                        throw new FileNotFoundException($"{uid} NOT FOUND");
-                                    }
-
-                                }
-                                if (film != null)
-                                {
-                                    this.Invoke(new updateItem(updateItemF), i, "抓取成功", film.Score, film.Date, film.Title, film.Actor.GetActorNames(Gender.WOMAN).GetString(), film.Index, film.Category.ToArray().GetString(','));
-                                }
-                                else
-                                {
-                                    this.Invoke(new updateItem(updateItemF), i, "抓取失败", null, null, "Null of film", null, null, null);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                this.Invoke(new updateItem(updateItemF), i, "抓取失败", null, null, ex.Message, null, null, null);
-                            }
-                            mFilms.Add(film);
-                            this.Invoke(new progressValueChange(progressValueChangeF), (int)((double)(i + 1) / len * 100));
-                        }
-                        this.Invoke(startPolling, false);
-                        mPolling = false;
-                    })
-                    { IsBackground = true }.Start();
-                }
-            }
-            catch (Exception e1)
-            {
-                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            }
-        }
-
         private void listInfo_DoubleClick(object sender, EventArgs e)
         {
             try
             {
+                if (mFilms == null) return;
                 SelectedListViewItemCollection s = this.listInfo.SelectedItems;
                 if (s.Count > 0)
                 {
                     int nowIndex = s[0].Index;
-                    Process process = new Process();
-                    ProcessStartInfo processStartInfo = new ProcessStartInfo(mGrap.SRC + this.listInfo.Items[nowIndex].SubItems[7].Text);
-                    process.StartInfo = processStartInfo;
-                    process.StartInfo.UseShellExecute = true;
-                    process.Start();
-
+                    if (mFilms[nowIndex] == null || mFilms[nowIndex].UID.IsNullOrEmpty()) return;
+                    Process.Start(Application.StartupPath + "\\JavDB.Client.exe", mFilms[nowIndex].UID!);
                 }
             }
             catch (Exception e1)
@@ -332,9 +203,9 @@ namespace JavDB.Polling
                                 item = new ToolStripMenuItem(act.ToString());
                                 item.Click += (_, _) =>
                                 {
-                                    tabControl1.SelectedIndex = 1;
-                                    txtPage.Text = act.Url;
-                                    loadPage(1);
+                                    tabControl1.SelectedIndex = 2;
+                                    txtPageAuto.Text = act.Url;
+                                    loadPage(txtURL2.Text + act.Url, 1, true);
                                 };
                                 menuItemActor.DropDownItems.Add(item);
                                 i++;
@@ -429,152 +300,28 @@ namespace JavDB.Polling
         }
         private void txtPage_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter && !string.IsNullOrEmpty(txtPage.Text))
+            if (e.KeyCode == Keys.Enter && !string.IsNullOrEmpty(txtPageManual.Text))
             {
-                loadPage(1);
-            }
-        }
-        private void loadPage(int page)
-        {
-            try
-            {
-                saveConfig();
-                listInfo.Items.Clear();
-                mFilms = new List<FilmInformation>();
-                progressBar1.Value = 0;
-                Application.DoEvents();
-                string url = $"{txtURL.Text}{txtPage.Text}";
-                if (url.IndexOf("page=") >= 0)
-                    throw new UriFormatException("地址参数不能包括page.");
-                if (page > 1)
-                {
-                    if (url.IndexOf("?") >= 0)
-                    {
-                        url += "&";
-                    }
-                    else
-                    {
-                        url += "?";
-                    }
-                    url += $"page={page}";
-                }
-                if (mGrap.GrabPage($"{url}", out List<FilmInformation> films))
-                {
-                    films.Sort();
-                    mFilms = films;
-                    Action<bool> startPolling = (value) =>
-                    {
-                        if (!value)
-                        {
-                            btnPageDown.Enabled = true;
-                        }
-                        tabControl1.Enabled = !value;
-                        groupBox1.Enabled = tabControl1.Enabled;
-                        listInfo.Enabled = !value;
-                    };
-                    new Thread(() =>
-                    {
-                        mPolling = true;
-                        this.Invoke(startPolling, true);
-                        for (int i = 0; i < films.Count; i++)
-                        {
-                            if (mPolling == false) break;
-                            this.Invoke(new addItem(addItemF), i, films[i].UID, "抓取中");
-                            try
-                            {
-                                string file = Path.Combine(mConfig.CachePath, films[i].SeriesNumber!, films[i].UID!, films[i].UID + ".json");
-                                FilmInformation? film;
-                                if (File.Exists(file))
-                                {
-                                    StreamReader sr = File.OpenText(file);
-                                    string cache = sr.ReadToEnd();
-                                    sr.Close();
-                                    film = FilmInformation.Convert(cache);
-                                    if (film == null)
-                                    {
-                                        film = films[i];
-                                    }
-                                    else
-                                    {
-                                        film.Score = films[i].Score;
-                                    }
-                                    DateTime dateTime;
-                                    DateTime.TryParse(film.GrabTime, out dateTime);
-                                    if (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds || (film.Actor.Count == 0 && film.Category.Count == 0))
-                                    {
-                                        if (rbStandard.Checked || (rbFliterScore.Checked && double.Parse(film.Score) >= (double)numScore.Value))
-                                        {
-                                            if (mConfig.Delay > 0 && i > 0)
-                                                Thread.Sleep(mConfig.Delay);
-                                            mGrap.GrabDetail(ref film);
-                                            string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!);
-                                            File.WriteAllText(file, film.ToString());
-                                            if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                        }
-                                    }
-                                    films[i] = film;
-                                }
-                                else
-                                {
-                                    film = films[i];
-                                    if (rbStandard.Checked || (rbFliterScore.Checked && double.Parse(film.Score) >= (double)numScore.Value))
-                                    {
-                                        if (mConfig.Delay > 0 && i > 0)
-                                            Thread.Sleep(mConfig.Delay);
-                                        mGrap.GrabDetail(ref film);
-                                    }
-                                    string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!);
-                                    MakeSureDirectoryPathExists(file);
-                                    File.WriteAllText(file, film.ToString());
-                                    if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                }
-                                if (film != null)
-                                {
-                                    this.Invoke(new updateItem(updateItemF), i, "抓取成功", film.Score, film.Date, film.Title, film.Actor.GetActorNames(Gender.WOMAN).GetString(), film.Index, film.Category.ToArray().GetString(','));
-                                }
-                                else
-                                {
-                                    this.Invoke(new updateItem(updateItemF), i, "抓取失败", null, null, "Null of film", null, null, null);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                this.Invoke(new updateItem(updateItemF), i, "抓取失败", null, null, ex.Message, null, null, null);
-                            }
-                            this.Invoke(new progressValueChange(progressValueChangeF), (int)((double)(i + 1) / films.Count * 100));
-                        }
-                        this.Invoke(startPolling, false);
-                        mPolling = false;
-                    })
-                    { IsBackground = true }.Start();
-                }
-                else
-                {
-                    btnPageDown.Enabled = false;
-                    MessageBox.Show("未搜索到任何结果。", "搜索", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                mPage = page;
-            }
-            catch (Exception e1)
-            {
-                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                loadPage($"{txtURL.Text}{txtPageManual.Text}", 1, false);
             }
         }
         private void btnLoadPage_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(txtPage.Text))
+            if (!string.IsNullOrEmpty(txtPageManual.Text))
             {
-                loadPage(1);
+                loadPage($"{txtURL.Text}{txtPageManual.Text}", 1, false);
             }
         }
         private void btnPageUp_Click(object sender, EventArgs e)
         {
-            loadPage(mPage - 1);
+            mPage--;
+            loadPage($"{txtURL.Text}{txtPageManual.Text}", mPage, false);
         }
 
         private void btnPageDown_Click(object sender, EventArgs e)
         {
-            loadPage(mPage + 1);
+            mPage++;
+            loadPage($"{txtURL.Text}{txtPageManual.Text}", mPage, false);
         }
         private void btnSaveUIDList_Click(object sender, EventArgs e)
         {
@@ -600,6 +347,10 @@ namespace JavDB.Polling
                     }
                     using (StreamWriter sr = new StreamWriter(fileName, mode))
                     {
+                        if (mode != true && tabControl1.SelectedIndex > 0)
+                        {
+                            sr.WriteLine("#Page: " + (tabControl1.SelectedIndex == 1 ? m_PageUrl : txtPageManual.Text));
+                        }
                         foreach (var film in mFilms)
                         {
                             if (film.UID != null)
@@ -618,14 +369,7 @@ namespace JavDB.Polling
         }
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //if (tabControl1.SelectedIndex == 0)
-            //{
-            //    listInfo.ContextMenuStrip = contextMenuStrip1;
-            //}
-            //else
-            //{
-            //    listInfo.ContextMenuStrip = contextMenuStrip1;
-            //}
+
         }
 
         private void btnLoadFile_Click(object sender, EventArgs e)
@@ -646,21 +390,30 @@ namespace JavDB.Polling
                 mFilms = new List<FilmInformation>();
                 progressBar1.Value = 0;
                 Application.DoEvents();
-                Action<bool> startPolling = (value) =>
-                {
-                    tabControl1.Enabled = !value;
-                    groupBox1.Enabled = tabControl1.Enabled;
-                    btnSortScore.Enabled = !value;
-                    listInfo.Enabled = !value;
-                    lblFileCount.Text = $"共 {mFilms.Count} 条";
-                };
                 new Thread(() =>
                 {
                     mPolling = true;
-                    this.Invoke(startPolling, true);
+                    this.Invoke(new startPollingDelegate(startPolling), true);
                     using (StreamReader sr = new StreamReader(fileName))
                     {
                         string[] buffer = sr.ReadToEnd().Split("\r\n");
+                        m_PageUrl = "";
+                        if (buffer.Length > 0)
+                        {
+                            if (buffer[0].StartsWith("#Page:"))
+                            {
+                                m_PageUrl = buffer[0].Substring(6, buffer[0].Length - 6).Trim();
+                                if (m_PageUrl.Length > 0)
+                                {
+                                    Action<string> setUrl = (text) =>
+                                    {
+                                        txtPageManual.Text = text;
+                                    };
+                                    this.Invoke(setUrl, m_PageUrl);
+                                }
+                                buffer = buffer.Skip(1).Take(buffer.Length - 1).ToArray();
+                            }
+                        }
                         for (int i = 0; i < buffer.Length; i++)
                         {
                             string line = buffer[i].ToUpper();
@@ -669,114 +422,35 @@ namespace JavDB.Polling
                                 var film = new FilmInformation();
                                 if (mPolling == false) break;
                                 film.UID = line;
-                                this.Invoke(new addItem(addItemF), i, line, "等待中");
+                                this.Invoke(new addItemDelegate(addItem), i, line, "等待中", null, null, null, null, null, null);
                                 mFilms.Add(film);
                             }
                             double ww = ((double)i + 1) / buffer.Length * 100;
-                            this.Invoke(new progressValueChange(progressValueChangeF), (int)ww);
+                            this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)ww);
                         }
-                        this.Invoke(startPolling, true);
+                        this.Invoke(new startPollingDelegate(startPolling), true);
                     }
                     for (int i = 0; i < mFilms.Count; i++)
                     {
                         if (mPolling == false) break;
-                        this.Invoke(new updateItem(updateItemF), i, "抓取中", null, null, null, null, null, null);
-                        FilmInformation? film = new FilmInformation();
+                        this.Invoke(new updateItemDelegate(updateItem), i, "抓取中", null, null, null, null, null, null);
                         try
                         {
-                            string file = Path.Combine(mConfig.CachePath, mFilms[i].SeriesNumber!, mFilms[i].UID!, mFilms[i].UID + ".json");
-                            if (File.Exists(file))
-                            {
-                                StreamReader sr = File.OpenText(file);
-                                string cache = sr.ReadToEnd();
-                                sr.Close();
-                                film = FilmInformation.Convert(cache);
-                                if (film == null)
-                                {
-                                    film = new FilmInformation();
-                                    film.GrabTime = "1971-01-01 00:00:00";
-                                }
-                                DateTime dateTime;
-                                DateTime.TryParse(film.GrabTime, out dateTime);
-                                if (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds)
-                                {
-                                    if (mConfig.Delay > 0 && i > 0)
-                                        Thread.Sleep(mConfig.Delay);
-                                    if (rbFliterScore.Checked)
-                                    {
-                                        film = mGrap.Grab(mFilms[i].UID!, (double)numScore.Value);
-                                    }
-                                    else
-                                    {
-                                        film = mGrap.Grab(mFilms[i].UID!, rbSimple.Checked);
-                                    }
-                                    string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!);
-                                    File.WriteAllText(file, film.ToString());
-                                    if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                }
-                                else if (film.Actor.Count == 0)
-                                {
-                                    if (rbStandard.Checked || (rbFliterScore.Checked && double.Parse(film.Score) >= (double)numScore.Value))
-                                    {
-                                        if (mConfig.Delay > 0 && i > 0)
-                                            Thread.Sleep(mConfig.Delay);
-                                        if (rbStandard.Checked)
-                                        {
-                                            film = mGrap.Grab(mFilms[i].UID!);
-                                        }
-                                        else
-                                        {
-                                            mGrap.GrabDetail(ref film);
-                                        }
-                                        string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!);
-                                        File.WriteAllText(file, film.ToString());
-                                        if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (mConfig.Delay > 0 && i > 0)
-                                    Thread.Sleep(mConfig.Delay);
-                                if (rbFliterScore.Checked)
-                                {
-                                    film = mGrap.Grab(mFilms[i].UID!, (double)numScore.Value);
-                                }
-                                else
-                                {
-                                    film = mGrap.Grab(mFilms[i].UID!, rbSimple.Checked);
-                                }
-                                if (film != null && film.UID == mFilms[i].UID!)
-                                {
-                                    string path = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID);
-                                    MakeSureDirectoryPathExists(file);
-                                    File.WriteAllText(file, film.ToString());
-                                    if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
-                                }
-                                else
-                                {
-                                    throw new FileNotFoundException($"{mFilms[i].UID!} NOT FOUND");
-                                }
-
-                            }
-                            if (film != null)
+                            FilmInformation? film = mFilms[i];
+                            if (grabFilm(ref film))
                             {
                                 mFilms[i] = film;
-                                this.Invoke(new updateItem(updateItemF), i, "抓取成功", film.Score, film.Date, film.Title, film.Actor.GetActorNames(Gender.WOMAN).GetString(), film.Index, film.Category.ToArray().GetString(','));
-                            }
-                            else
-                            {
-                                this.Invoke(new updateItem(updateItemF), i, "抓取失败", null, null, "Null of film", null, null, null);
+                                this.Invoke(new updateItemDelegate(updateItem), i, "抓取成功", film.Score, film.Date, film.Title, film.Actor.GetActorNames(Gender.WOMAN).GetString(), film.Index, film.Category.ToArray().GetString(','));
                             }
                         }
                         catch (Exception ex)
                         {
-                            this.Invoke(new updateItem(updateItemF), i, "抓取失败", null, null, ex.Message, null, null, null);
+                            this.Invoke(new updateItemDelegate(updateItem), i, "抓取失败", null, null, ex.Message, null, null, null);
                         }
-                        this.Invoke(new progressValueChange(progressValueChangeF), (int)((double)(i + 1) / mFilms.Count * 100));
+                        this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)(i + 1) / mFilms.Count * 100));
                     }
                     mPolling = false;
-                    this.Invoke(startPolling, false);
+                    this.Invoke(new startPollingDelegate(startPolling), false);
                 })
                 { IsBackground = true }.Start();
             }
@@ -792,40 +466,19 @@ namespace JavDB.Polling
             listInfo.Items.Clear();
             progressBar1.Value = 0;
             Application.DoEvents();
-            Action<bool> startPolling = (value) =>
-            {
-                tabControl1.Enabled = !value;
-                groupBox1.Enabled = tabControl1.Enabled;
-                lblFileCount.Text = $"共 {mFilms.Count} 条";
-            };
-            Action<int, string, string, string, string, string, string, string, string> addItem = (index, uid, state, score, date, title, actors, url, flag) =>
-            {
-                ListViewItem item = new ListViewItem((index + 1).ToString());
-                item.SubItems.Add(uid);
-                item.SubItems.Add(state.IsNullOrEmpty() ? "抓取中" : state);
-                item.SubItems.Add(score);
-                item.SubItems.Add(date);
-                item.SubItems.Add(title);
-                item.SubItems.Add(actors);
-                item.SubItems.Add(url);
-                item.SubItems.Add(flag);
-                item.Selected = true;
-                listInfo.Items.Add(item);
-                listInfo.EnsureVisible(index);
-            };
             new Thread(() =>
             {
                 mPolling = true;
                 mFilms.Sort();
-                this.Invoke(startPolling, true);
+                this.Invoke(new startPollingDelegate(startPolling), true);
                 for (int i = 0; i < mFilms.Count; i++)
                 {
                     if (mPolling == false) break;
-                    this.Invoke(addItem, i, mFilms[i].UID, mFilms[i].Index.IsNullOrEmpty() ? "抓取失败" : "抓取成功", mFilms[i].Score, mFilms[i].Date, mFilms[i].Title, mFilms[i].Actor.GetActorNames(Gender.WOMAN).GetString(), mFilms[i].Index, mFilms[i].Category.ToArray().GetString(','));
-                    this.Invoke(new progressValueChange(progressValueChangeF), (int)((double)(i + 1) / mFilms.Count * 100));
+                    this.Invoke(new addItemDelegate(addItem), i, mFilms[i].UID, mFilms[i].Index.IsNullOrEmpty() ? "抓取失败" : "抓取成功", mFilms[i].Score, mFilms[i].Date, mFilms[i].Title, mFilms[i].Actor.GetActorNames(Gender.WOMAN).GetString(), mFilms[i].Index, mFilms[i].Category.ToArray().GetString(','));
+                    this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)(i + 1) / mFilms.Count * 100));
                 }
                 mPolling = false;
-                this.Invoke(startPolling, false);
+                this.Invoke(new startPollingDelegate(startPolling), false);
             })
             { IsBackground = true }.Start();
         }
@@ -884,7 +537,7 @@ namespace JavDB.Polling
                         return;
                     }
                     txtPageValue.Text = result.ToString();
-                    loadPage(result);
+                    loadPage($"{txtURL.Text}{txtPageManual.Text}", result);
                 }
                 else
                 {
@@ -893,11 +546,15 @@ namespace JavDB.Polling
             }
         }
 
-        private void txtPage_TextChanged(object sender, EventArgs e)
+        private void txtPageManual_TextChanged(object sender, EventArgs e)
         {
-            btnLoadPage.Enabled = txtPage.Text.Length > 0;
+            btnLoadPage.Enabled = txtPageManual.Text.Length > 0;
+            txtPageAuto.Text = txtPageManual.Text;
         }
-
+        private void txtPageAuto_TextChanged(object sender, EventArgs e)
+        {
+            txtPageManual.Text = txtPageAuto.Text;
+        }
         private void menuItemCopyJson_Click(object sender, EventArgs e)
         {
             try
@@ -922,15 +579,264 @@ namespace JavDB.Polling
         {
             try
             {
-                mConfig.Series = txtSeries.Text.ToUpper();
-                mConfig.Size = (int)numSize.Value;
-                mConfig.Start = int.Parse(txtStart.Text);
-                mConfig.End = int.Parse(txtEnd.Text);
                 mConfig.Delay = (int)numDelay.Value;
                 mConfig.Mode = (byte)(rbStandard.Checked ? 0 : rbSimple.Checked ? 1 : 2);
                 mConfig.Score = (double)numScore.Value;
                 mConfig.ExpirationTime = (ushort)numExpirationTime.Value;
                 mConfig.Save(Application.StartupPath + "JavDB.Polling.json");
+            }
+            catch (Exception e1)
+            {
+                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+
+        private void menuItemIndex_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                SelectedListViewItemCollection s = this.listInfo.SelectedItems;
+                if (s.Count > 0)
+                {
+                    int nowIndex = s[0].Index;
+                    Process process = new Process();
+                    ProcessStartInfo processStartInfo = new ProcessStartInfo(mGrap.SRC + this.listInfo.Items[nowIndex].SubItems[7].Text);
+                    process.StartInfo = processStartInfo;
+                    process.StartInfo.UseShellExecute = true;
+                    process.Start();
+                }
+            }
+            catch (Exception e1)
+            {
+                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+        private void btnLoadActorUrl_Click(object sender, EventArgs e)
+        {
+            loadPage(txtURL2.Text + txtPageAuto.Text, 1, true);
+        }
+        private void loadPage(string url, int page = 1, bool auto = false)
+        {
+            try
+            {
+                saveConfig();
+                listInfo.Items.Clear();
+                mFilms = new List<FilmInformation>();
+                progressBar1.Value = 0;
+                Application.DoEvents();
+                if (url.IndexOf("page=") >= 0)
+                    throw new UriFormatException("地址参数不能包括page.");
+                List<FilmInformation> films = new List<FilmInformation>();
+                new Thread(() =>
+                {
+                    try
+                    {
+                        mPolling = true;
+                        this.Invoke(new startPollingDelegate(startPolling), true);
+                        int npage = page;
+                        do
+                        {
+                            if (mPolling == false) break;
+                            string purl = url;
+                            if (purl.IndexOf("?") >= 0)
+                            {
+                                purl += "&";
+                            }
+                            else
+                            {
+                                purl += "?";
+                            }
+                            purl += $"page={npage}";
+                            this.Invoke(new changeStatusDelegate(changeStatus), $"正在加载第 {npage} 页");
+                            if (mGrap.GrabPage($"{purl}", out List<FilmInformation> pageFilms))
+                            {
+                                for (int i = 0; i < pageFilms.Count; i++)
+                                {
+                                    if (mPolling == false) break;
+                                    this.Invoke(new addItemDelegate(addItem), films.Count + i, pageFilms[i].UID, "等待中", pageFilms[i].Score, pageFilms[i].Date, pageFilms[i].Title, null, pageFilms[i].Index, null);
+                                    string file = Path.Combine(mConfig.CachePath, pageFilms[i].SeriesNumber!, pageFilms[i].UID!, pageFilms[i].UID + ".json");
+                                    if (!File.Exists(file))
+                                    {
+                                        MakeSureDirectoryPathExists(file);
+                                        File.WriteAllText(file, pageFilms[i].ToString());
+                                    }
+                                    double ww = ((double)i + 1) / pageFilms.Count * 100;
+                                    this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)ww);
+                                }
+                                films.AddRange(pageFilms);
+                                npage++;
+                            }
+                            else
+                                break;
+                        } while (auto);
+                        if (films.Count == 0)
+                        {
+                            return;
+                        }
+                        //films.Sort();
+                        mFilms = films;
+                        this.Invoke(new startPollingDelegate(startPolling), true);
+                        for (int i = 0; i < mFilms.Count; i++)
+                        {
+                            if (mPolling == false) break;
+                            this.Invoke(new updateItemDelegate(updateItem), i, "抓取中", mFilms[i].Score, mFilms[i].Date, mFilms[i].Title, null, mFilms[i].Index, null);
+                            FilmInformation? film = mFilms[i];
+                            try
+                            {
+                                if (grabFilm(ref film))
+                                {
+                                    mFilms[i] = film;
+                                    this.Invoke(new updateItemDelegate(updateItem), i, "抓取成功", film.Score, film.Date, film.Title, film.Actor.GetActorNames(Gender.WOMAN).GetString(), film.Index, film.Category.ToArray().GetString(','));
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                this.Invoke(new updateItemDelegate(updateItem), i, "抓取失败", null, null, ex.Message, null, null, null);
+                            }
+                            this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)(i + 1) / mFilms.Count * 100));
+                        }
+                    }
+                    catch { }
+                    finally
+                    {
+                        this.Invoke(new startPollingDelegate(startPolling), false);
+                        mPolling = false;
+                    }
+                })
+                { IsBackground = true }.Start();
+            }
+            catch (Exception e1)
+            {
+                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+        private bool grabFilm(ref FilmInformation film)
+        {
+            if (film == null) throw new NullReferenceException("Null of film");
+            if (film.UID.IsNullOrEmpty()) throw new NullReferenceException("Null of film.UID");
+
+            string file = Path.Combine(mConfig.CachePath, film.UID!.Split("-")[0], film.UID, film.UID + ".json");
+            FilmInformation? item;
+            if (File.Exists(file))
+            {
+                StreamReader sr = File.OpenText(file);
+                string cache = sr.ReadToEnd();
+                sr.Close();
+                item = FilmInformation.Convert(cache);
+                if (item != null)
+                {
+                    DateTime dateTime;
+                    DateTime.TryParse(item.GrabTime, out dateTime);
+                    if (rbStandard.Checked)
+                    {
+                        if ((item.Actor.Count == 0 && item.Category.Count == 0) || (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds))
+                        {
+                            if (mConfig.Delay > 0)
+                                Thread.Sleep(mConfig.Delay);
+                            mGrap.GrabDetail(ref item);
+                        }
+                    }
+                    else if (rbFliterScore.Checked)
+                    {
+                        if (!film.Index.IsNullOrEmpty())
+                        {
+                            item.Score = film.Score;
+                        }
+                        if (double.Parse(item.Score) >= (double)numScore.Value)
+                        {
+                            if ((item.Actor.Count == 0 && item.Category.Count == 0) || (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds))
+                            {
+                                if (mConfig.Delay > 0)
+                                    Thread.Sleep(mConfig.Delay);
+                                mGrap.GrabDetail(ref item);
+                            }
+                        }
+                    }
+                    //else if (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds)
+                    //{
+                    //    if (rbStandard.Checked)
+                    //    {
+                    //        if (mConfig.Delay > 0)
+                    //            Thread.Sleep(mConfig.Delay);
+                    //        item = mGrap.Grab(film.UID!, rbSimple.Checked);
+                    //    }
+                    //    else
+                    //    {
+                    //        if (!film.Index.IsNullOrEmpty())
+                    //        {
+                    //            item.Score = film.Score;
+                    //            item.GrabTime = film.GrabTime;
+                    //        }
+                    //        else
+                    //        {
+                    //            if (mConfig.Delay > 0)
+                    //                Thread.Sleep(mConfig.Delay);
+                    //            item = mGrap.Grab(film.UID!, rbSimple.Checked);
+                    //        }
+                    //    }
+                    //}
+                }
+                else if (film.Index.IsNullOrEmpty())
+                {
+                    if (mConfig.Delay > 0)
+                        Thread.Sleep(mConfig.Delay);
+                    if (rbFliterScore.Checked)
+                    {
+                        item = mGrap.Grab(film.UID, (double)numScore.Value);
+                    }
+                    else
+                    {
+                        item = mGrap.Grab(film.UID, rbSimple.Checked);
+                    }
+                }
+                else
+                {
+                    item = film;
+                }
+            }
+            else
+            {
+                if (mConfig.Delay > 0)
+                    Thread.Sleep(mConfig.Delay);
+                if (rbFliterScore.Checked)
+                {
+                    item = mGrap.Grab(film.UID, (double)numScore.Value);
+                }
+                else
+                {
+                    item = mGrap.Grab(film.UID, rbSimple.Checked);
+                }
+            }
+            if (item != null && item.UID == film.UID)
+            {
+                string path = Path.Combine(mConfig.CachePath, item.SeriesNumber!, item.UID);
+                MakeSureDirectoryPathExists(file);
+                File.WriteAllText(file, item.ToString());
+                if (item.Magnet != null) File.WriteAllText(Path.Combine(path, item.UID + ".html"), item.Magnet);
+                film = item;
+                return true;
+            }
+            else
+            {
+                throw new FileNotFoundException($"{film.UID} NOT FOUND");
+            }
+        }
+
+        private void menuItemSeriesNumber_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (mFilms == null) return;
+                SelectedListViewItemCollection s = this.listInfo.SelectedItems;
+                if (s.Count > 0)
+                {
+                    int nowIndex = s[0].Index;
+                    if (mFilms[nowIndex] == null) return;
+                    //https://javdb522.com/video_codes/IDBD
+                    tabControl1.SelectedIndex = 1;
+                    txtPageManual.Text = "/video_codes/" + mFilms[nowIndex].SeriesNumber;
+                    loadPage($"{txtURL.Text}{txtPageManual.Text}");
+                }
             }
             catch (Exception e1)
             {

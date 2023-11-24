@@ -11,12 +11,9 @@ namespace JavDB.Polling
     internal class Config
     {
         public string CachePath { get; set; } = Path.Combine(Application.StartupPath, "cache");
-        public string? Series { get; set; } = "IPX";
-        public int Size { get; set; } = 3;
-        public int Start { get; set; } = 1;
-        public int End { get; set; } = 100;
         public int Delay { get; set; } = 1000;
         public byte Mode { get; set; } = 0;
+        public string[] AutoComplete { get; set; } = new string[2] { "/video_codes/", "/actors/" };
         public double Score { get; set; } = 8.0;
         private ushort mExpirationTime = 720;
         public ushort ExpirationTime

@@ -13,6 +13,7 @@ using System.Text.Unicode;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace JavDB.Film
 {
@@ -33,22 +34,22 @@ namespace JavDB.Film
                 throw new NullReferenceException(nameof(mConfig));
             }
         }
-        public FilmInformation Grab(string uid, bool simple = false)
+        public FilmInformation Grab(string uid, bool simple = false, bool perfectMatch = true)
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
             if (string.IsNullOrEmpty(uid)) throw new ArgumentNullException("uid");
-            GrabSimple(uid, out FilmInformation film);
+            GrabSimple(uid, out FilmInformation film, perfectMatch);
             if (!simple)
             {
                 GrabDetail(ref film);
             }
             return film;
         }
-        public FilmInformation Grab(string uid, double score)
+        public FilmInformation Grab(string uid, double score, bool perfectMatch = true)
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
             if (string.IsNullOrEmpty(uid)) throw new ArgumentNullException("uid");
-            GrabSimple(uid, out FilmInformation film);
+            GrabSimple(uid, out FilmInformation film, perfectMatch);
             if (score > 0D && score <= 10D && !string.IsNullOrEmpty(film.Score))
             {
                 if (double.Parse(film.Score) >= score)
@@ -56,7 +57,7 @@ namespace JavDB.Film
             }
             return film;
         }
-        public void GrabSimple(string uid, out FilmInformation film)
+        public void GrabSimple(string uid, out FilmInformation film, bool perfectMatch = true)
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
             if (string.IsNullOrEmpty(uid)) throw new ArgumentNullException("uid");
@@ -78,29 +79,43 @@ namespace JavDB.Film
                 throw new Exception("未搜索到影片");
             }
             int index = 1;
-            FilmInformation first = new FilmInformation();
             FilmInformation result = new FilmInformation();
+            HtmlNode item;
             do
             {
-                var item = dom[0].SelectSingleNode(mConfig.grab.item.path.Replace("$index", index.ToString()));
+                item = dom[0].SelectSingleNode(mConfig.grab.item.path.Replace("$index", index.ToString()));
                 if (item != null)
                 {
                     if (ResolvingItem(item, out result))
                     {
                         if (result.UID != null && result.UID == uid)
-                            break;
+                        {
+                            film = result;
+                            return;
+                        }
                     }
                 }
                 else
-                    throw new Exception("未搜索到影片");
+                    break;
                 index++;
-            } while (index <= 10);
-            if (result.Index != null)
+            } while (index <= 20);
+            item = dom[0].SelectSingleNode(mConfig.grab.item.path.Replace("$index", "1"));
+            if (item != null)
             {
-                film = result;
+                if (ResolvingItem(item, out result))
+                {
+                    if (!perfectMatch)
+                    {
+                        film = result;
+                    }
+                    else
+                        throw new Exception("未搜索到影片");
+                }
+                else
+                    throw new Exception("解析影片基本信息失败");
             }
             else
-                throw new Exception("未搜索到影片");
+                throw new Exception("没有任何结果");
         }
         public void GrabDetail(ref FilmInformation film)
         {

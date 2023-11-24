@@ -10,6 +10,7 @@ using static System.Windows.Forms.ListView;
 using System;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Accessibility;
 
 namespace JavDB.Client
 {
@@ -18,6 +19,7 @@ namespace JavDB.Client
         private Grappler mGrap;
         private FilmInformation? film;
         private Config mConfig;
+        private string? m_Uid = null;
         /// <summary>
         /// 确保文件路径已存在
         /// </summary>
@@ -25,7 +27,7 @@ namespace JavDB.Client
         /// <returns></returns>
         [DllImport("dbghelp.dll", EntryPoint = "MakeSureDirectoryPathExists", CallingConvention = CallingConvention.StdCall)]
         public static extern long MakeSureDirectoryPathExists(string dirpath);
-        public MainForm()
+        public MainForm(string[] args)
         {
             InitializeComponent();
             try
@@ -51,7 +53,7 @@ namespace JavDB.Client
                 mGrap = new Grappler("{}");
                 mConfig.Save(Application.StartupPath + "JavDB.Client.json");
             }
-            finally
+            try
             {
                 picCover.LoadCompleted += (_, _) =>
                 {
@@ -69,11 +71,26 @@ namespace JavDB.Client
                 };
                 string cache = Path.Combine(Path.GetTempPath(), "JavDB");
                 MakeSureDirectoryPathExists(cache);
-                Debug.WriteLine(cache);
                 var env = CoreWebView2Environment.CreateAsync(userDataFolder: cache).Result;
                 webView21.EnsureCoreWebView2Async(env);
                 webView22.EnsureCoreWebView2Async(env);
+                if (args.Length > 0)
+                {
+                    m_Uid = args[0];
+                }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                Application.Exit();
+            }
+        }
+
+        private void MainForm_Shown(object sender, EventArgs e)
+        {
+            if (m_Uid.IsNullOrEmpty()) return;
+            txtUID.Text = m_Uid!.ToUpper();
+            btnGrab_Click(null, null);
         }
         private void btnGrab_Click(object sender, EventArgs e)
         {
@@ -88,7 +105,7 @@ namespace JavDB.Client
                 btnCopy.Enabled = false;
                 Application.DoEvents();
                 string grabUID = txtUID.Text.ToUpper();
-                grabUID = grabUID.Replace("-CH", "").Replace("-UC", "").Replace("-U", "").Replace("-C", "");
+                grabUID = grabUID.Replace(" ", "-").Replace("-CH", "").Replace("-UC", "").Replace("-U", "").Replace("-C", "");
 
                 if (chbCacheFirst.Checked && File.Exists(Path.Combine(mConfig.CachePath, grabUID.Split('-')[0], grabUID, grabUID + ".json")))
                 {
@@ -102,7 +119,7 @@ namespace JavDB.Client
                     DateTime.TryParse(film.GrabTime, out dateTime);
                     if (DateTime.Now.GetUnixTimestamp() - dateTime.GetUnixTimestamp() > mConfig.ExpirationSeconds)
                     {
-                        film = mGrap.Grab(grabUID);
+                        film = mGrap.Grab(grabUID, false, false);
                         string path = Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID);
                         File.WriteAllText(Path.Combine(path, film.UID + ".json"), film.ToString());
                         if (film.Magnet != null) File.WriteAllText(Path.Combine(path, film.UID + ".html"), film.Magnet);
@@ -117,7 +134,7 @@ namespace JavDB.Client
                 }
                 else
                 {
-                    film = mGrap.Grab(grabUID);
+                    film = mGrap.Grab(grabUID, false, false);
                     string path = Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID);
                     MakeSureDirectoryPathExists(path + "\\");
                     File.WriteAllText(Path.Combine(path, film.UID + ".json"), film.ToString());
@@ -181,7 +198,7 @@ namespace JavDB.Client
             item.SubItems.Add(film.Date);
             listInfo.Items.Add(item);
             item = new ListViewItem("主页地址");
-            item.SubItems.Add(mGrap.SRC + film.Index);
+            item.SubItems.Add(film.Index);
             listInfo.Items.Add(item);
             item = new ListViewItem("封面");
             item.SubItems.Add(film.Cover);
@@ -269,28 +286,8 @@ namespace JavDB.Client
                 if (s.Count > 0)
                 {
                     int nowIndex = s[0].Index;
-                    string text = "";
-                    if (this.listInfo.Items[nowIndex].SubItems[0].Text == "演员")
-                    {
-                        text = this.listInfo.Items[nowIndex].Tag.ToString()!;
-                    }
-                    else
-                    {
-                        text = this.listInfo.Items[nowIndex].SubItems[1].Text;
-                    }
-                    if (text.IndexOf("http") >= 0)
-                    {
-                        Process process = new Process();
-                        ProcessStartInfo processStartInfo = new ProcessStartInfo(text);
-                        process.StartInfo = processStartInfo;
-                        process.StartInfo.UseShellExecute = true;
-                        process.Start();
-                    }
-                    else if (text.Trim().Length > 0)
-                    {
-                        Clipboard.SetDataObject(text, true);
-                        MessageBox.Show("复制文本成功！", "复制", MessageBoxButtons.OK, MessageBoxIcon.Question);
-                    }
+                    Clipboard.SetDataObject(this.listInfo.Items[nowIndex].SubItems[1].Text, true);
+                    MessageBox.Show("复制文本成功！", "复制", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception e1)
@@ -304,11 +301,74 @@ namespace JavDB.Client
             try
             {
                 Clipboard.SetDataObject(film!.ToString(), true);
-                MessageBox.Show("复制文本成功！", "复制", MessageBoxButtons.OK, MessageBoxIcon.Question);
+                MessageBox.Show("复制文本成功！", "复制", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception e1)
             {
                 MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+
+        private void menuItemOpen_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                SelectedListViewItemCollection s = this.listInfo.SelectedItems;
+                if (s.Count > 0)
+                {
+                    int nowIndex = s[0].Index;
+                    string text = "";
+                    if (this.listInfo.Items[nowIndex].SubItems[0].Text == "演员")
+                    {
+                        text = this.listInfo.Items[nowIndex].Tag.ToString()!;
+                    }
+                    else if (this.listInfo.Items[nowIndex].SubItems[0].Text == "主页地址")
+                    {
+                        text = mGrap.SRC + this.listInfo.Items[nowIndex].SubItems[1].Text;
+                    }
+                    else
+                    {
+                        text = this.listInfo.Items[nowIndex].SubItems[1].Text;
+                    }
+                    if (text.IndexOf("http") >= 0)
+                    {
+                        Process process = new Process();
+                        ProcessStartInfo processStartInfo = new ProcessStartInfo(text);
+                        process.StartInfo = processStartInfo;
+                        process.StartInfo.UseShellExecute = true;
+                        process.Start();
+                    }
+                }
+            }
+            catch (Exception e1)
+            {
+                MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+
+        private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                SelectedListViewItemCollection s = this.listInfo.SelectedItems;
+                if (s.Count > 0)
+                {
+                    int nowIndex = s[0].Index;
+                    string text = this.listInfo.Items[nowIndex].SubItems[0].Text;
+                    if (text == "主页地址" || text == "封面" || text == "海报" || text == "演员")
+                    {
+                        menuItemOpen.Enabled = true;
+                        e.Cancel = false;
+                    }
+                    else
+                    {
+                        menuItemOpen.Enabled = false;
+                        e.Cancel = true;
+                    }
+                }
+            }
+            catch
+            {
             }
         }
     }
@@ -325,7 +385,11 @@ namespace JavDB.Client
             movie.Date = film.Date;
             movie.Summary = film.Title;
             movie.MetaJson = "{}";
-            movie.Actor = new List<string>(film.Actor.GetActorNames(Gender.WOMAN));
+            movie.Actor = new List<string>();
+            foreach (FilmActor actor in film.Actor)
+            {
+                if (actor.Gender == Gender.WOMAN) movie.Actor.Add(actor.Name);
+            }
             movie.Director = film.Director;
             movie.Category = film.Category;
             movie.FilmDistributor = film.FilmDistributor;
