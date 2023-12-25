@@ -347,9 +347,9 @@ namespace JavDB.Polling
                     }
                     using (StreamWriter sr = new StreamWriter(fileName, mode))
                     {
-                        if (mode != true && tabControl1.SelectedIndex > 0)
+                        if (mode != true)
                         {
-                            sr.WriteLine("#Page: " + (tabControl1.SelectedIndex == 1 ? m_PageUrl : txtPageManual.Text));
+                            sr.WriteLine("#Page: " + (tabControl1.SelectedIndex == 0 ? m_PageUrl : txtPageManual.Text));
                         }
                         foreach (var film in mFilms)
                         {
@@ -538,6 +538,7 @@ namespace JavDB.Polling
                     }
                     txtPageValue.Text = result.ToString();
                     loadPage($"{txtURL.Text}{txtPageManual.Text}", result);
+                    mPage = result;
                 }
                 else
                 {
@@ -549,11 +550,13 @@ namespace JavDB.Polling
         private void txtPageManual_TextChanged(object sender, EventArgs e)
         {
             btnLoadPage.Enabled = txtPageManual.Text.Length > 0;
-            txtPageAuto.Text = txtPageManual.Text;
+            if (txtPageAuto.Text.Length != txtPageManual.Text.Length || txtPageAuto.Text != txtPageManual.Text)
+                txtPageAuto.Text = txtPageManual.Text;
         }
         private void txtPageAuto_TextChanged(object sender, EventArgs e)
         {
-            txtPageManual.Text = txtPageAuto.Text;
+            if (txtPageAuto.Text.Length != txtPageManual.Text.Length || txtPageAuto.Text != txtPageManual.Text)
+                txtPageManual.Text = txtPageAuto.Text;
         }
         private void menuItemCopyJson_Click(object sender, EventArgs e)
         {

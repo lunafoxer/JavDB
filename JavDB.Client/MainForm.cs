@@ -188,60 +188,37 @@ namespace JavDB.Client
         }
         private void FillBasicInformation(FilmInformation film)
         {
-            ListViewItem item = new ListViewItem("影片番号");
-            item.SubItems.Add(film.UID);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("主题");
-            item.SubItems.Add(film.Title);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("发行日期");
-            item.SubItems.Add(film.Date);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("主页地址");
-            item.SubItems.Add(film.Index);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("封面");
-            item.SubItems.Add(film.Cover);
-            listInfo.Items.Add(item);
+            addItem("影片番号", film.UID);
+            addItem("主题", film.Title);
+            addItem("发行日期", film.Date);
+            addItem("主页地址", film.Index);
+            addItem("封面", film.Cover);
         }
         private void FillDetailInformation(FilmInformation film)
         {
-            ListViewItem item = new ListViewItem("海报");
-            item.SubItems.Add(film.Poster);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("预览");
-            item.SubItems.Add(film.PreviewVideo);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("级别");
-            item.SubItems.Add(film.Level);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("时长");
-            item.SubItems.Add(film.Durations);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("导演");
-            item.SubItems.Add(film.Director);
-            item = new ListViewItem("片商");
-            item.SubItems.Add(film.FilmDistributor);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("发行");
-            item.SubItems.Add(film.Issue);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("系列");
-            item.SubItems.Add(film.Series);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("评分");
-            item.SubItems.Add(film.Score);
-            listInfo.Items.Add(item);
-            item = new ListViewItem("类别");
-            item.SubItems.Add(film.Category.GetString(','));
-            listInfo.Items.Add(item);
+            addItem("海报", film.Poster);
+            addItem("预览", film.PreviewVideo);
+            addItem("级别", film.Level);
+            addItem("时长", film.Durations);
+            addItem("导演", film.Director);
+            addItem("片商", film.FilmDistributor);
+            addItem("发行", film.Issue);
+            addItem("系列", film.Series);
+            addItem("评分", film.Score);
+            addItem("类别", film.Category.GetString(','));
             foreach (var act in film.Actor)
             {
-                item = new ListViewItem("演员");
-                item.SubItems.Add(act.Name + (act.Gender == Film.Gender.MALE ? "(男)" : "(女)"));
-                item.Tag = mGrap.SRC + act.Url;
-                listInfo.Items.Add(item);
+                addItem("演员", act.Name + (act.Gender == Film.Gender.MALE ? "(男)" : "(女)"), mGrap.SRC + act.Url);
             }
+        }
+        private void addItem(string itemName, string? itemValue, string? tag = null)
+        {
+            if (itemName.IsNullOrEmpty()) return;
+            if (itemValue.IsNullOrEmpty()) return;
+            ListViewItem item = new ListViewItem(itemName);
+            item.SubItems.Add(itemValue);
+            if (!tag.IsNullOrEmpty()) item.Tag = tag;
+            listInfo.Items.Add(item);
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)

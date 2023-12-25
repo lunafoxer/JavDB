@@ -166,6 +166,7 @@ namespace JavDB.Film
                             break;
                         case "類別:":
                             var dt = it.SelectNodes("span/a");
+                            film.Category = new List<string>();
                             foreach (var node in dt)
                             {
                                 film.Category.Add(node.InnerText.Trim());

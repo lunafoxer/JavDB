@@ -377,6 +377,8 @@
             // 
             // txtPageAuto
             // 
+            txtPageAuto.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            txtPageAuto.AutoCompleteSource = AutoCompleteSource.CustomSource;
             txtPageAuto.Location = new Point(212, 10);
             txtPageAuto.Name = "txtPageAuto";
             txtPageAuto.Size = new Size(319, 23);
@@ -575,7 +577,6 @@
             // 
             numExpirationTime.Location = new Point(810, 22);
             numExpirationTime.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
-            numExpirationTime.Minimum = new decimal(new int[] { 24, 0, 0, 0 });
             numExpirationTime.Name = "numExpirationTime";
             numExpirationTime.Size = new Size(64, 23);
             numExpirationTime.TabIndex = 23;

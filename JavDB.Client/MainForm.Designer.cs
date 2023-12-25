@@ -133,6 +133,7 @@
             listInfo.Location = new Point(6, 42);
             listInfo.MultiSelect = false;
             listInfo.Name = "listInfo";
+            listInfo.ShowItemToolTips = true;
             listInfo.Size = new Size(503, 527);
             listInfo.TabIndex = 4;
             listInfo.UseCompatibleStateImageBehavior = false;
