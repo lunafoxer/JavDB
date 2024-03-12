@@ -11,7 +11,7 @@ namespace JavDB.Client
     internal class Config
     {
         public string CachePath { get; set; } = Path.Combine(Application.StartupPath, "cache");
-        public string PlayerURL { get; set; } = "http://m.karevin.cn:8086/javdb/player.htm";
+        public string PlayerURL = "file:///" + Path.Combine(Application.StartupPath, "player.htm");
         private ushort mExpirationTime = 720;
         public ushort ExpirationTime
         {

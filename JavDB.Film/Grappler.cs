@@ -73,7 +73,7 @@ namespace JavDB.Film
                 throw new Exception("请求网页失败");
             }
             //parser.Load("g:\\123.html", Encoding.UTF8);
-            var dom = parser.DocumentNode.SelectNodes(mConfig.grab.path);
+            var dom = parser.DocumentNode.SelectNodes(mConfig.grab.basic.path);
             if (dom == null || dom.Count == 0)
             {
                 throw new Exception("未搜索到影片");
@@ -83,7 +83,7 @@ namespace JavDB.Film
             HtmlNode item;
             do
             {
-                item = dom[0].SelectSingleNode(mConfig.grab.item.path.Replace("$index", index.ToString()));
+                item = dom[0].SelectSingleNode(mConfig.grab.basic.item.path.Replace("$index", index.ToString()));
                 if (item != null)
                 {
                     if (ResolvingItem(item, out result))
@@ -99,7 +99,7 @@ namespace JavDB.Film
                     break;
                 index++;
             } while (index <= 20);
-            item = dom[0].SelectSingleNode(mConfig.grab.item.path.Replace("$index", "1"));
+            item = dom[0].SelectSingleNode(mConfig.grab.basic.item.path.Replace("$index", "1"));
             if (item != null)
             {
                 if (ResolvingItem(item, out result))
@@ -206,9 +206,21 @@ namespace JavDB.Film
             var dma = item.SelectSingleNode(mConfig.grab.index.magnet);
             if (dma != null)
             {
-                film.Magnet = baseString.magent_html.Replace("#TAG_MAGENT#", dma.OuterHtml);
-                film.Magnet = film.Magnet.Replace(dma.SelectSingleNode(mConfig.grab.index.clearMagnet).OuterHtml, "");
-                film.Magnet = film.Magnet.Replace("data-clipboard-text=", baseString.magent_tag + "value= ");
+                film.Magnet = baseString.magent_html.Replace("#TAG_MAGENT#", dma.OuterHtml).Replace("data-clipboard-text=", baseString.magent_tag + "value= ");
+                var clearBody = dma.SelectSingleNode(mConfig.grab.index.clearMagnet);
+                if (clearBody != null)
+                {
+                    film.Magnet = film.Magnet.Replace(clearBody.OuterHtml, "");
+                }
+                var css = parser.DocumentNode.SelectSingleNode(mConfig.grab.index.css);
+                if (css != null)
+                {
+                    string css_url = css.GetAttributeValue("href", "");
+                    if (!css_url.IsNullOrEmpty())
+                    {
+                        film.Magnet= film.Magnet.Replace("#TAG_CSS_SRC#", SRC+css_url);
+                    }
+                }
             }
             film.GrabTime = DateTime.Now.ToString();
         }
@@ -231,7 +243,7 @@ namespace JavDB.Film
             {
                 throw new Exception("请求网页失败");
             }
-            var dom = parser.DocumentNode.SelectNodes(mConfig.grab.path);
+            var dom = parser.DocumentNode.SelectNodes(mConfig.grab.basic.path);
             if (dom == null || dom.Count == 0)
             {
                 Debug.WriteLine("暂无结果");
@@ -240,7 +252,7 @@ namespace JavDB.Film
             int index = 1;
             do
             {
-                var item = dom[0].SelectSingleNode(mConfig.grab.item.path.Replace("$index", index.ToString()));
+                var item = dom[0].SelectSingleNode(mConfig.grab.basic.item.path.Replace("$index", index.ToString()));
                 if (item == null) break;
                 if (ResolvingItem(item, out FilmInformation? film))
                 {
@@ -266,14 +278,14 @@ namespace JavDB.Film
             if (string.IsNullOrEmpty(film.Index)) return false;
             film.Level = "R-18";
             film.GrabTime = DateTime.Now.ToString();
-            film.Title = item.GetAttributeValue(mConfig.grab.item.title, "");
-            film.Poster = item.SelectSingleNode(mConfig.grab.item.poster)?.GetAttributeValue("src", "");
+            film.Title = item.GetAttributeValue(mConfig.grab.basic.item.title, "");
+            film.Poster = item.SelectSingleNode(mConfig.grab.basic.item.poster)?.GetAttributeValue("src", "");
             film.Cover = film.Poster?.Replace("covers", "thumbs");
-            film.UID = item.SelectSingleNode(mConfig.grab.item.uid)?.InnerText;
-            film.Score = item.SelectSingleNode(mConfig.grab.item.score)?.InnerText.Middle("&nbsp;", "分, ");
+            film.UID = item.SelectSingleNode(mConfig.grab.basic.item.uid)?.InnerText;
+            film.Score = item.SelectSingleNode(mConfig.grab.basic.item.score)?.InnerText.Middle("&nbsp;", "分, ");
             if (!string.IsNullOrEmpty(film.Score))
                 film.Score = Math.Round(double.Parse(film.Score.Trim()) * mConfig.scoreMultiplier, 1).ToString();
-            film.Date = item.SelectSingleNode(mConfig.grab.item.date)?.InnerText.Replace(((char)10).ToString(), "").Trim();
+            film.Date = item.SelectSingleNode(mConfig.grab.basic.item.date)?.InnerText.Replace(((char)10).ToString(), "").Trim();
             return true;
         }
         public static string ReadFile(string filename)

@@ -1,22 +1,25 @@
 {
-  "src": "https://javdb522.com",
+  "src": "https://javdb524.com",
   "scoreMultiplier": 1.85,
   "grab": {
-    "path": "/html/body/section/div/div[@class='movie-list h cols-4 vcols-8']",
-    "item": {
-      "path": "div[$index]/a[@class='box']",
-      "title": "title",
-      "poster": "div/img",
-      "score": "div[@class='score']",
-      "uid": "div[@class='video-title']/strong",
-      "date": "div[@class='meta']"
+    "basic": {
+      "path": "/html/body/section/div/div[@class='movie-list h cols-4 vcols-8']",
+      "item": {
+        "path": "div[$index]/a[@class='box']",
+        "title": "title",
+        "poster": "div/img",
+        "score": "div[@class='score']",
+        "uid": "div[@class='video-title']/strong",
+        "date": "div[@class='meta']"
+      }
     },
     "index": {
       "path": "/html/body/section/div/div[@class='video-detail']",
+      "css": "/html/head/link[@rel='stylesheet']",
       "poster": "div/div/div/a/img",
       "previewVideo": "div[2]/div/article/div/div/video[@id='preview-video']/source",
-      "magnet": "div[@data-controller='movie-tab']/div/div[@id='tabs-container']",
-      "clearMagnet": "div/article/div/div[@class='top-meta']",
+      "magnet": "div[@data-controller='movie-tab']/div/div[@id='tabs-container']/div[@id='magnets']/article",
+      "clearMagnet": "div/div[@class='top-meta']",
       "info": {
         "path": "div[@class='video-meta-panel']/div/div[@class='column']/nav/div[@class='panel-block']",
         "type": "strong"

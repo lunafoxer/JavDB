@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>mPlayer</title>
+    <meta name="viewport" content="width=device-width">
+    <script type="text/javascript">
+        /*--获取网页传递的参数--*/
+        function getParas(paras) {
+            var url = location.href;
+            var paramStr = url.substring(url.indexOf('?') + 1, url.length).split('&');
+            var j;
+            var paramObj = {};
+            for (var i = 0; j = paramStr[i]; i++) {
+                paramObj[j.substring(0, j.indexOf('=')).toLowerCase()] = j.substring(j.indexOf('=') + 1, j.length);
+            }
+            var returnValue = paramObj[paras.toLowerCase()];
+            if (typeof (returnValue) == "undefined") {
+                return "";
+            } else {
+                return returnValue;
+            }
+        }
+        window.onload = function () {
+            var url = getParas("url");
+            var muted = getParas("muted");
+            var width = getParas("width");
+            var height = getParas("height");
+            var controls = getParas("controls");
+            var poster = getParas("poster");
+            var autoplay = getParas("autoplay");
+            
+            if (width > 0) {
+			document.getElementById("mPlayer").width = width
+            } else {
+			document.getElementById("mPlayer").width = window.innerWidth - 20
+            }
+            if (height > 0) {
+			document.getElementById("mPlayer").height = height
+            } else {
+			document.getElementById("mPlayer").height = window.innerHeight - 20
+            }
+            if (controls=="false") {
+			document.getElementById("mPlayer").controls = ""
+            }else{
+            	document.getElementById("mPlayer").controls = "controls"
+            }
+            if (muted=="true") {
+			document.getElementById("mPlayer").muted = "muted"
+            }else{
+            	document.getElementById("mPlayer").muted = ""
+            }
+            if (autoplay=="false") {
+			document.getElementById("mPlayer").preload = "auto"
+            }else{
+            	document.getElementById("mPlayer").autoplay = "autoplay"
+            }
+            if(poster!=""){
+            	document.getElementById("mPlayer").poster = poster
+            }
+            if (url != "") {
+			document.getElementById("mPlayer").src = url
+            }else{
+            	alert('错误，没有传入视频播放地址！')
+            }
+        }
+    </script>
+</head>
+
+<body scroll="no" align="center">
+<video id="mPlayer" align="center" src="" onerror="alert('视频播放失败！')" controls width="98%" height="98%">
+	错误！浏览器不支持 Video 标签！
+</video>
+</body>
+</html>
