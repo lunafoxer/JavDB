@@ -15,13 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Synology\Synology.VideoStation.Meta\Synology.VideoStation.Meta.csproj" />
     <ProjectReference Include="..\JavDB.Film\JavDB.Film.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Synology.VideoStation.Meta">
-      <HintPath>..\..\Synology\Synology.VideoStation.Meta\bin\Release\net6.0\Synology.VideoStation.Meta.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>

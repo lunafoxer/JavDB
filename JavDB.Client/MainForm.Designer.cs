@@ -265,6 +265,7 @@
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "JavDB";
+            Activated += MainForm_Activated;
             FormClosed += MainForm_FormClosed;
             Shown += MainForm_Shown;
             tabControl1.ResumeLayout(false);

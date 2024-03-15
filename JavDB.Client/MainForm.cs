@@ -11,6 +11,9 @@ using System;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Accessibility;
+using System.Text.Encodings.Web;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
 
 namespace JavDB.Client
 {
@@ -348,6 +351,15 @@ namespace JavDB.Client
             {
             }
         }
+
+        private void MainForm_Activated(object sender, EventArgs e)
+        {
+            if (txtUID.Text.Length > 0)
+            {
+                txtUID.SelectAll();
+            }
+            txtUID.Focus();
+        }
     }
     public class VSMetaFile
     {
@@ -372,11 +384,55 @@ namespace JavDB.Client
             movie.FilmDistributor = film.FilmDistributor;
             movie.Level = film.Level;
             movie.Score = film.Score;
-            movie.Cover = file.DirectoryName + "\\Cover.jpg";
-            movie.Poster = file.DirectoryName + "\\Poster.jpg";
-            MetaFile.WriteToFile(filename, movie);
+
+            if (movie.Images == null) movie.Images = new ImageInfo();
+            using BinaryReader fs = new(File.Open(file.DirectoryName + "\\Cover.jpg", FileMode.Open));
+            movie.Images.Episode = fs.ReadBytes((int)fs.BaseStream.Length);
+            using BinaryReader fsb = new(File.Open(file.DirectoryName + "\\Poster.jpg", FileMode.Open));
+            movie.Images.Backdrop = fsb.ReadBytes((int)fsb.BaseStream.Length);
+            movie.Locked = true;
+            MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
             //µ÷ÊÔÊä³ö(¡°Êä³öVSMETA£º¡± £« movie_path £« ¡°\¡± £« vsmeta_outfile £« ¡°.vsmeta¡±)
             Process.Start("Explorer", $" /select,\"{filename}\"");
+        }
+
+        internal class MovieInformation : IMovieInformation
+        {
+            public string? Title { get; set; }
+            public string? Title2 { get; set; }
+            public string? SubTitle { get; set; }
+            public int Year { get; set; }
+            public string? Date { get; set; }
+            public string? Level { get; set; }
+            public string? Director { get; set; }
+            public string? FilmDistributor { get; set; }
+            public string? Summary { get; set; }
+            public string? Score { get; set; }
+            public string? MetaJson { get; set; }
+            public List<string> Category { get; set; } = new List<string>();
+            public List<string> Actor { get; set; } = new List<string>();
+            public bool Locked { get; set; }
+            public ImageInfo? Images { get; set; }
+            public TvshowInfo? Tvshow { get; set; }
+            public int Timestamp { get; set; }
+
+            public MovieInformation()
+            {
+                Images = new ImageInfo();
+                Tvshow = new TvshowInfo();
+            }
+            /// <summary>
+            /// json
+            /// </summary>
+            /// <returns></returns>
+            public override string ToString()
+            {
+                return JsonSerializer.Serialize(this, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, NumberHandling = JsonNumberHandling.AllowReadingFromString, Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) });
+            }
+            public static MovieInformation? Convert(string json)
+            {
+                return JsonSerializer.Deserialize<MovieInformation>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, NumberHandling = JsonNumberHandling.AllowReadingFromString, Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) });
+            }
         }
     }
 }

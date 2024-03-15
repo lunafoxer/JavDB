@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JavDB.Client", "JavDB.Clien
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JavDB.Polling", "JavDB.Polling\JavDB.Polling.csproj", "{15F2FCF1-BE69-403C-88F9-9FA144A97037}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Synology.VideoStation.Meta", "..\Synology\Synology.VideoStation.Meta\Synology.VideoStation.Meta.csproj", "{B4D56441-494B-4E12-85BE-FDE816D39C72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{15F2FCF1-BE69-403C-88F9-9FA144A97037}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15F2FCF1-BE69-403C-88F9-9FA144A97037}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15F2FCF1-BE69-403C-88F9-9FA144A97037}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4D56441-494B-4E12-85BE-FDE816D39C72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4D56441-494B-4E12-85BE-FDE816D39C72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4D56441-494B-4E12-85BE-FDE816D39C72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4D56441-494B-4E12-85BE-FDE816D39C72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
