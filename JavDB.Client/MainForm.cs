@@ -1,5 +1,6 @@
 using JavDB.Film;
 using JavDB.Film.Common;
+using JavDB.Extentions.Nfo;
 using Synology.VideoStation.Meta;
 using System.Diagnostics;
 using System.IO;
@@ -14,6 +15,10 @@ using Accessibility;
 using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
+using static JavDB.Client.VSMetaFile;
+using Microsoft.VisualBasic.Devices;
+using System.Xml;
+using System.Text;
 
 namespace JavDB.Client
 {
@@ -58,19 +63,19 @@ namespace JavDB.Client
             }
             try
             {
-                picCover.LoadCompleted += (_, _) =>
-                {
-                    if (film == null) return;
-                    string path = Path.Combine(mConfig!.CachePath, film.SeriesNumber!, film.UID!, "Cover.jpg");
-                    MakeSureDirectoryPathExists(path);
-                    picCover.Image?.Save(path);
-                };
                 picPoster.LoadCompleted += (_, _) =>
                 {
                     if (film == null) return;
-                    string path = Path.Combine(mConfig!.CachePath, film.SeriesNumber!, film.UID!, "Poster.jpg");
+                    string path = Path.Combine(mConfig!.CachePath, film.SeriesNumber!, film.UID!, "poster.jpg");
                     MakeSureDirectoryPathExists(path);
                     picPoster.Image?.Save(path);
+                };
+                picBackdrop.LoadCompleted += (_, _) =>
+                {
+                    if (film == null) return;
+                    string path = Path.Combine(mConfig!.CachePath, film.SeriesNumber!, film.UID!, "backdrop.jpg");
+                    MakeSureDirectoryPathExists(path);
+                    picBackdrop.Image?.Save(path);
                 };
                 string cache = Path.Combine(Path.GetTempPath(), "JavDB");
                 MakeSureDirectoryPathExists(cache);
@@ -99,12 +104,12 @@ namespace JavDB.Client
         {
             try
             {
-                picCover.Image = null;
                 picPoster.Image = null;
+                picBackdrop.Image = null;
                 listInfo.Items.Clear();
                 btnGrab.Text = "正在抓取";
                 btnGrab.Enabled = false;
-                btnOutputVsMeta.Enabled = false;
+                btnOutputMetadata.Enabled = false;
                 btnCopy.Enabled = false;
                 Application.DoEvents();
                 string grabUID = txtUID.Text.ToUpper();
@@ -145,21 +150,9 @@ namespace JavDB.Client
                 }
                 if (film != null)
                 {
-                    if (File.Exists(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "Cover.jpg")))
+                    if (File.Exists(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "poster.jpg")))
                     {
-                        using FileStream file = File.Open(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "Cover.jpg"), FileMode.Open);
-                        picCover.Image = new Bitmap(file);
-                    }
-                    else
-                    {
-                        if (film.Cover != null)
-                        {
-                            picCover.LoadAsync(film.Cover);
-                        }
-                    }
-                    if (File.Exists(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "Poster.jpg")))
-                    {
-                        using FileStream file = File.Open(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "Poster.jpg"), FileMode.Open);
+                        using FileStream file = File.Open(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "poster.jpg"), FileMode.Open);
                         picPoster.Image = new Bitmap(file);
                     }
                     else
@@ -169,9 +162,21 @@ namespace JavDB.Client
                             picPoster.LoadAsync(film.Poster);
                         }
                     }
+                    if (File.Exists(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "backdrop.jpg")))
+                    {
+                        using FileStream file = File.Open(Path.Combine(mConfig.CachePath, film.SeriesNumber, film.UID, "backdrop.jpg"), FileMode.Open);
+                        picBackdrop.Image = new Bitmap(file);
+                    }
+                    else
+                    {
+                        if (film.Backdrop != null)
+                        {
+                            picBackdrop.LoadAsync(film.Backdrop);
+                        }
+                    }
                     FillBasicInformation(film);
                     FillDetailInformation(film);
-                    btnOutputVsMeta.Enabled = true;
+                    btnOutputMetadata.Enabled = true;
                     btnCopy.Enabled = true;
                 }
             }
@@ -186,6 +191,7 @@ namespace JavDB.Client
         {
             if (film != null)
             {
+                NfoFile.Output(Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!, "movie.nfo"), film);
                 VSMetaFile.Output(Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!, txtUID.Text + ".mp4.vsmeta"), film);
             }
         }
@@ -195,11 +201,11 @@ namespace JavDB.Client
             addItem("主题", film.Title);
             addItem("发行日期", film.Date);
             addItem("主页地址", film.Index);
-            addItem("封面", film.Cover);
+            addItem("封面", film.Poster);
         }
         private void FillDetailInformation(FilmInformation film)
         {
-            addItem("海报", film.Poster);
+            addItem("海报", film.Backdrop);
             addItem("预览", film.PreviewVideo);
             addItem("级别", film.Level);
             addItem("时长", film.Durations);
@@ -234,7 +240,7 @@ namespace JavDB.Client
             {
                 if (film != null && film.PreviewVideo != null)
                 {
-                    webView21.Source = new Uri($"{mConfig.PlayerURL}?url={film.PreviewVideo}&muted=true&poster={film.Poster}");
+                    webView21.Source = new Uri($"{mConfig.PlayerURL}?url={film.PreviewVideo}&muted=true&poster={film.Backdrop}");
                 }
             }
             else if (tabControl1.SelectedIndex == 2)
@@ -360,6 +366,8 @@ namespace JavDB.Client
             }
             txtUID.Focus();
         }
+
+
     }
     public class VSMetaFile
     {
@@ -386,9 +394,9 @@ namespace JavDB.Client
             movie.Score = film.Score;
 
             if (movie.Images == null) movie.Images = new ImageInfo();
-            using BinaryReader fs = new(File.Open(file.DirectoryName + "\\Cover.jpg", FileMode.Open));
+            using BinaryReader fs = new(File.Open(file.DirectoryName + "\\poster.jpg", FileMode.Open));
             movie.Images.Episode = fs.ReadBytes((int)fs.BaseStream.Length);
-            using BinaryReader fsb = new(File.Open(file.DirectoryName + "\\Poster.jpg", FileMode.Open));
+            using BinaryReader fsb = new(File.Open(file.DirectoryName + "\\backdrop.jpg", FileMode.Open));
             movie.Images.Backdrop = fsb.ReadBytes((int)fsb.BaseStream.Length);
             movie.Locked = true;
             MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
@@ -433,6 +441,61 @@ namespace JavDB.Client
             {
                 return JsonSerializer.Deserialize<MovieInformation>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, NumberHandling = JsonNumberHandling.AllowReadingFromString, Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) });
             }
+        }
+    }
+    public class NfoFile
+    {
+        public static void Output(string filename, FilmInformation film)
+        {
+            FileInfo file = new FileInfo(filename);
+            movie movie = new movie();
+            movie.plot = film.Title;
+            movie.lockdata = false;
+            movie.dateadded = DateTime.Parse(film.GrabTime);
+            movie.title = film.UID;
+            movie.originaltitle = film.Title;
+            movie.director = film.Director;
+            // movie.writer = null;
+            movie.trailer = new List<string> { film.PreviewVideo };
+            movie.rating = film.Score;
+            movie.year = (ushort?)(film.Date == null ? 1971 : int.Parse(film.Date.Substring(0, 4)));
+            movie.premiered = DateTime.Parse(film.Date);
+            movie.releasedate = movie.premiered;
+            movie.mpaa = film.Level;
+            //movie.runtime =film.Durations;
+            movie.art = new art() { fanart = "backdrop.jpg", poster = "poster.jpg" };
+            movie.genre = new List<string>();
+            foreach (var s in film.Category)
+            {
+                movie.genre.Add(s);
+            }
+            movie.studio = new List<string> { film.FilmDistributor };
+
+            movie.actors = new List<actor>();
+            short index = 0;
+            foreach (FilmActor actor in film.Actor)
+            {
+                if (actor.Gender == Gender.WOMAN)
+                {
+                    actor act = new actor();
+                    act.name = actor.Name;
+                    act.role = "女主角";
+                    act.type = "Actor";
+                    act.sortorder = index;
+                    index++;
+                    movie.actors.Add(act);
+                }
+            }
+            using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                byte[] buffer = Encoding.UTF8.GetBytes(movie.ToString());
+                fs.SetLength(0);
+                fs.Write(buffer, 0, buffer.Length);
+                fs.Close();
+            }
+            //MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
+            //调试输出(“输出VSMETA：” ＋ movie_path ＋ “\” ＋ vsmeta_outfile ＋ “.vsmeta”)
+            //Process.Start("Explorer", $" /select,\"{filename}\"");
         }
     }
 }

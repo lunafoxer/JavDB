@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Synology\Synology.VideoStation.Meta\Synology.VideoStation.Meta.csproj" />
+    <ProjectReference Include="..\JavDB.Extentions.Nfo\JavDB.Extentions.Nfo.csproj" />
     <ProjectReference Include="..\JavDB.Film\JavDB.Film.csproj" />
   </ItemGroup>
 

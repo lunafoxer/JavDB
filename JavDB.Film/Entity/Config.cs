@@ -30,7 +30,7 @@
     {
         public string path { get; set; } = "div[$index]/a[@class='box']";
         public string title { get; set; } = "title";
-        public string poster { get; set; } = "div/img";
+        public string backdrop { get; set; } = "div/img";
         public string score { get; set; } = "div[@class='score']";
         public string uid { get; set; } = "div[@class='video-title']/strong";
         public string date { get; set; } = "div[@class='meta']";
@@ -39,7 +39,7 @@
     {
         public string path { get; set; } = "/html/body/section/div/div[@class='video-detail']";
         public string css { get; set; } = "/html/head/link[@rel='stylesheet']";
-        public string poster { get; set; } = "div/div/div/a/img";
+        public string backdrop { get; set; } = "div/div/div/a/img";
         public string previewVideo { get; set; } = "div[2]/div/article/div/div/video[@id='preview-video']/source";
         public string magnet { get; set; } = "div[@data-controller='movie-tab']/div/div[@id='tabs-container']/div[@id='magnets']/article";
         public string clearMagnet { get; set; } = "div/div[@class='top-meta']";

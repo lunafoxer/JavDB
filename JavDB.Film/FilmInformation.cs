@@ -27,9 +27,9 @@ namespace JavDB.Film
         }
         public string? Index { get; set; } // 主页地址
         public string? Date { get; set; } // 发布日期
-        public string? Cover { get; set; } // 封面图片地址
+        public string? Backdrop { get; set; } // 海报图片地址（大）
         public string? Level { get; set; } // 评级
-        public string? Poster { get; set; } // 背景图片地址
+        public string? Poster { get; set; } // 封面图片地址（小）
         public string? Durations { get; set; } // 時長，分钟
         public string? Director { get; set; } // 導演
         public string? FilmDistributor { get; set; } // 片商

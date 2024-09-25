@@ -1,5 +1,5 @@
 {
-  "src": "https://javdb524.com",
+  "src": "https://javdb.com",
   "scoreMultiplier": 1.85,
   "grab": {
     "basic": {
@@ -7,7 +7,7 @@
       "item": {
         "path": "div[$index]/a[@class='box']",
         "title": "title",
-        "poster": "div/img",
+        "backdrop": "div/img",
         "score": "div[@class='score']",
         "uid": "div[@class='video-title']/strong",
         "date": "div[@class='meta']"
@@ -16,7 +16,7 @@
     "index": {
       "path": "/html/body/section/div/div[@class='video-detail']",
       "css": "/html/head/link[@rel='stylesheet']",
-      "poster": "div/div/div/a/img",
+      "backdrop": "div/div/div/a/img",
       "previewVideo": "div[2]/div/article/div/div/video[@id='preview-video']/source",
       "magnet": "div[@data-controller='movie-tab']/div/div[@id='tabs-container']/div[@id='magnets']/article",
       "clearMagnet": "div/div[@class='top-meta']",

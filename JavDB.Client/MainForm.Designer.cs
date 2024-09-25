@@ -32,14 +32,14 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             btnCopy = new Button();
+            picBackdrop = new PictureBox();
             picPoster = new PictureBox();
-            picCover = new PictureBox();
             listInfo = new ListView();
             columnHeader1 = new ColumnHeader();
             columnHeader2 = new ColumnHeader();
             contextMenuStrip1 = new ContextMenuStrip(components);
             menuItemOpen = new ToolStripMenuItem();
-            btnOutputVsMeta = new Button();
+            btnOutputMetadata = new Button();
             btnGrab = new Button();
             chbCacheFirst = new CheckBox();
             txtUID = new TextBox();
@@ -49,8 +49,8 @@
             webView22 = new Microsoft.Web.WebView2.WinForms.WebView2();
             tabControl1.SuspendLayout();
             tabPage1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)picBackdrop).BeginInit();
             ((System.ComponentModel.ISupportInitialize)picPoster).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)picCover).BeginInit();
             contextMenuStrip1.SuspendLayout();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
@@ -73,10 +73,10 @@
             // tabPage1
             // 
             tabPage1.Controls.Add(btnCopy);
+            tabPage1.Controls.Add(picBackdrop);
             tabPage1.Controls.Add(picPoster);
-            tabPage1.Controls.Add(picCover);
             tabPage1.Controls.Add(listInfo);
-            tabPage1.Controls.Add(btnOutputVsMeta);
+            tabPage1.Controls.Add(btnOutputMetadata);
             tabPage1.Controls.Add(btnGrab);
             tabPage1.Controls.Add(chbCacheFirst);
             tabPage1.Controls.Add(txtUID);
@@ -99,29 +99,29 @@
             btnCopy.UseVisualStyleBackColor = true;
             btnCopy.Click += btnCopy_Click;
             // 
+            // picBackdrop
+            // 
+            picBackdrop.BackColor = Color.White;
+            picBackdrop.BorderStyle = BorderStyle.FixedSingle;
+            picBackdrop.InitialImage = Properties.Resources.loading2;
+            picBackdrop.Location = new Point(515, 217);
+            picBackdrop.Name = "picBackdrop";
+            picBackdrop.Size = new Size(520, 352);
+            picBackdrop.SizeMode = PictureBoxSizeMode.Zoom;
+            picBackdrop.TabIndex = 6;
+            picBackdrop.TabStop = false;
+            // 
             // picPoster
             // 
             picPoster.BackColor = Color.White;
             picPoster.BorderStyle = BorderStyle.FixedSingle;
             picPoster.InitialImage = Properties.Resources.loading2;
-            picPoster.Location = new Point(515, 217);
+            picPoster.Location = new Point(702, 11);
             picPoster.Name = "picPoster";
-            picPoster.Size = new Size(520, 352);
+            picPoster.Size = new Size(147, 200);
             picPoster.SizeMode = PictureBoxSizeMode.Zoom;
-            picPoster.TabIndex = 6;
+            picPoster.TabIndex = 5;
             picPoster.TabStop = false;
-            // 
-            // picCover
-            // 
-            picCover.BackColor = Color.White;
-            picCover.BorderStyle = BorderStyle.FixedSingle;
-            picCover.InitialImage = Properties.Resources.loading2;
-            picCover.Location = new Point(702, 11);
-            picCover.Name = "picCover";
-            picCover.Size = new Size(147, 200);
-            picCover.SizeMode = PictureBoxSizeMode.Zoom;
-            picCover.TabIndex = 5;
-            picCover.TabStop = false;
             // 
             // listInfo
             // 
@@ -164,24 +164,24 @@
             menuItemOpen.Text = "打开链接";
             menuItemOpen.Click += menuItemOpen_Click;
             // 
-            // btnOutputVsMeta
+            // btnOutputMetadata
             // 
-            btnOutputVsMeta.Enabled = false;
-            btnOutputVsMeta.Font = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            btnOutputVsMeta.Location = new Point(357, 4);
-            btnOutputVsMeta.Name = "btnOutputVsMeta";
-            btnOutputVsMeta.Size = new Size(106, 32);
-            btnOutputVsMeta.TabIndex = 3;
-            btnOutputVsMeta.Text = "输出VSMETA";
-            btnOutputVsMeta.UseVisualStyleBackColor = true;
-            btnOutputVsMeta.Click += btnOutputVsMeta_Click;
+            btnOutputMetadata.Enabled = false;
+            btnOutputMetadata.Font = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            btnOutputMetadata.Location = new Point(370, 4);
+            btnOutputMetadata.Name = "btnOutputMetadata";
+            btnOutputMetadata.Size = new Size(93, 32);
+            btnOutputMetadata.TabIndex = 3;
+            btnOutputMetadata.Text = "输出元数据";
+            btnOutputMetadata.UseVisualStyleBackColor = true;
+            btnOutputMetadata.Click += btnOutputVsMeta_Click;
             // 
             // btnGrab
             // 
             btnGrab.Font = new Font("微软雅黑", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            btnGrab.Location = new Point(270, 4);
+            btnGrab.Location = new Point(282, 4);
             btnGrab.Name = "btnGrab";
-            btnGrab.Size = new Size(81, 32);
+            btnGrab.Size = new Size(82, 32);
             btnGrab.TabIndex = 2;
             btnGrab.Text = "抓取";
             btnGrab.UseVisualStyleBackColor = true;
@@ -271,8 +271,8 @@
             tabControl1.ResumeLayout(false);
             tabPage1.ResumeLayout(false);
             tabPage1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)picBackdrop).EndInit();
             ((System.ComponentModel.ISupportInitialize)picPoster).EndInit();
-            ((System.ComponentModel.ISupportInitialize)picCover).EndInit();
             contextMenuStrip1.ResumeLayout(false);
             tabPage2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)webView21).EndInit();
@@ -290,10 +290,10 @@
         private Button btnGrab;
         private CheckBox chbCacheFirst;
         private TextBox txtUID;
-        private Button btnOutputVsMeta;
+        private Button btnOutputMetadata;
         private ListView listInfo;
-        private PictureBox picCover;
         private PictureBox picPoster;
+        private PictureBox picBackdrop;
         private ColumnHeader columnHeader1;
         private ColumnHeader columnHeader2;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView21;

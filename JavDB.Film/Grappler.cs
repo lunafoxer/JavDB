@@ -129,10 +129,10 @@ namespace JavDB.Film
             var item = parser.DocumentNode.SelectSingleNode(mConfig.grab.index.path);
             if (item == null)
                 throw new Exception("解析影片详细信息失败");
+            if (string.IsNullOrEmpty(film.Backdrop))
+                film.Backdrop = item.SelectSingleNode(mConfig.grab.index.backdrop)?.GetAttributeValue("src", "");
             if (string.IsNullOrEmpty(film.Poster))
-                film.Poster = item.SelectSingleNode(mConfig.grab.index.poster)?.GetAttributeValue("src", "");
-            if (string.IsNullOrEmpty(film.Cover))
-                film.Cover = film.Poster?.Replace("covers", "thumbs");
+                film.Poster = film.Backdrop?.Replace("covers", "thumbs");
             //分析基本信息节点
             var info = item.SelectNodes(mConfig.grab.index.info.path);
             foreach (var it in info)
@@ -279,8 +279,8 @@ namespace JavDB.Film
             film.Level = "R-18";
             film.GrabTime = DateTime.Now.ToString();
             film.Title = item.GetAttributeValue(mConfig.grab.basic.item.title, "");
-            film.Poster = item.SelectSingleNode(mConfig.grab.basic.item.poster)?.GetAttributeValue("src", "");
-            film.Cover = film.Poster?.Replace("covers", "thumbs");
+            film.Backdrop = item.SelectSingleNode(mConfig.grab.basic.item.backdrop)?.GetAttributeValue("src", "");
+            film.Poster = film.Poster?.Replace("covers", "thumbs");
             film.UID = item.SelectSingleNode(mConfig.grab.basic.item.uid)?.InnerText;
             film.Score = item.SelectSingleNode(mConfig.grab.basic.item.score)?.InnerText.Middle("&nbsp;", "分, ");
             if (!string.IsNullOrEmpty(film.Score))
