@@ -31,15 +31,17 @@
             components = new System.ComponentModel.Container();
             contextMenuStrip1 = new ContextMenuStrip(components);
             menuItemIndex = new ToolStripMenuItem();
-            menuItemPoster = new ToolStripMenuItem();
+            menuItemBackdrop = new ToolStripMenuItem();
             menuItemPreviewVideo = new ToolStripMenuItem();
             menuItemMagent = new ToolStripMenuItem();
+            toolStripMenuItem1 = new ToolStripSeparator();
             menuItemSeriesNumber = new ToolStripMenuItem();
             menuItemActor = new ToolStripMenuItem();
             menuItemCopy = new ToolStripMenuItem();
             menuItemCopyUID = new ToolStripMenuItem();
             menuItemCopyActor = new ToolStripMenuItem();
             menuItemCopyJson = new ToolStripMenuItem();
+            menuItemFilter = new ToolStripMenuItem();
             tabControl1 = new TabControl();
             tabPage3 = new TabPage();
             btnStartPollingFile = new Button();
@@ -105,57 +107,62 @@
             // 
             // contextMenuStrip1
             // 
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemIndex, menuItemPoster, menuItemPreviewVideo, menuItemMagent, menuItemSeriesNumber, menuItemActor, menuItemCopy });
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemIndex, menuItemBackdrop, menuItemPreviewVideo, menuItemMagent, toolStripMenuItem1, menuItemSeriesNumber, menuItemActor, menuItemCopy, menuItemFilter });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(137, 158);
+            contextMenuStrip1.Size = new Size(181, 208);
             contextMenuStrip1.Opening += contextMenuStrip1_Opening;
             // 
             // menuItemIndex
             // 
             menuItemIndex.Name = "menuItemIndex";
-            menuItemIndex.Size = new Size(136, 22);
+            menuItemIndex.Size = new Size(180, 22);
             menuItemIndex.Text = "主页";
             menuItemIndex.Click += menuItemIndex_Click;
             // 
-            // menuItemPoster
+            // menuItemBackdrop
             // 
-            menuItemPoster.Name = "menuItemPoster";
-            menuItemPoster.Size = new Size(136, 22);
-            menuItemPoster.Text = "海报";
-            menuItemPoster.Click += menuItemPoster_Click;
+            menuItemBackdrop.Name = "menuItemBackdrop";
+            menuItemBackdrop.Size = new Size(180, 22);
+            menuItemBackdrop.Text = "海报";
+            menuItemBackdrop.Click += menuItemBackdrop_Click;
             // 
             // menuItemPreviewVideo
             // 
             menuItemPreviewVideo.Name = "menuItemPreviewVideo";
-            menuItemPreviewVideo.Size = new Size(136, 22);
+            menuItemPreviewVideo.Size = new Size(180, 22);
             menuItemPreviewVideo.Text = "视频预览";
             menuItemPreviewVideo.Click += menuItemPreviewVideo_Click;
             // 
             // menuItemMagent
             // 
             menuItemMagent.Name = "menuItemMagent";
-            menuItemMagent.Size = new Size(136, 22);
+            menuItemMagent.Size = new Size(180, 22);
             menuItemMagent.Text = "磁力链接";
             menuItemMagent.Click += menuItemMagent_Click;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(177, 6);
             // 
             // menuItemSeriesNumber
             // 
             menuItemSeriesNumber.Name = "menuItemSeriesNumber";
-            menuItemSeriesNumber.Size = new Size(136, 22);
+            menuItemSeriesNumber.Size = new Size(180, 22);
             menuItemSeriesNumber.Text = "按系列搜索";
             menuItemSeriesNumber.Click += menuItemSeriesNumber_Click;
             // 
             // menuItemActor
             // 
             menuItemActor.Name = "menuItemActor";
-            menuItemActor.Size = new Size(136, 22);
+            menuItemActor.Size = new Size(180, 22);
             menuItemActor.Text = "按主演搜索";
             // 
             // menuItemCopy
             // 
             menuItemCopy.DropDownItems.AddRange(new ToolStripItem[] { menuItemCopyUID, menuItemCopyActor, menuItemCopyJson });
             menuItemCopy.Name = "menuItemCopy";
-            menuItemCopy.Size = new Size(136, 22);
+            menuItemCopy.Size = new Size(180, 22);
             menuItemCopy.Text = "复制";
             // 
             // menuItemCopyUID
@@ -178,6 +185,12 @@
             menuItemCopyJson.Size = new Size(102, 22);
             menuItemCopyJson.Text = "Json";
             menuItemCopyJson.Click += menuItemCopyJson_Click;
+            // 
+            // menuItemFilter
+            // 
+            menuItemFilter.Name = "menuItemFilter";
+            menuItemFilter.Size = new Size(180, 22);
+            menuItemFilter.Text = "筛选";
             // 
             // tabControl1
             // 
@@ -677,7 +690,7 @@
 
         #endregion
         private ContextMenuStrip contextMenuStrip1;
-        private ToolStripMenuItem menuItemPoster;
+        private ToolStripMenuItem menuItemBackdrop;
         private ToolStripMenuItem menuItemPreviewVideo;
         private ToolStripMenuItem menuItemMagent;
         private TabControl tabControl1;
@@ -738,5 +751,7 @@
         private ToolStripStatusLabel statusLabel;
         private ToolStripStatusLabel lblCount;
         private ToolStripMenuItem menuItemSeriesNumber;
+        private ToolStripSeparator toolStripMenuItem1;
+        private ToolStripMenuItem menuItemFilter;
     }
 }

@@ -192,7 +192,9 @@ namespace JavDB.Client
             if (film != null)
             {
                 NfoFile.Output(Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!, "movie.nfo"), film);
-                VSMetaFile.Output(Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!, txtUID.Text + ".mp4.vsmeta"), film);
+                string file = Path.Combine(mConfig.CachePath, film.SeriesNumber!, film.UID!, txtUID.Text + ".mp4.vsmeta");
+                VSMetaFile.Output(file, film);
+                Process.Start("Explorer", $" /select,\"{file}\"");
             }
         }
         private void FillBasicInformation(FilmInformation film)
@@ -401,7 +403,41 @@ namespace JavDB.Client
             movie.Locked = true;
             MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
             //调试输出(“输出VSMETA：” ＋ movie_path ＋ “\” ＋ vsmeta_outfile ＋ “.vsmeta”)
-            Process.Start("Explorer", $" /select,\"{filename}\"");
+        }
+        public static void Output(string filename, movie nfoMovie)
+        {
+            FileInfo file = new FileInfo(filename);
+            MovieInformation movie = new MovieInformation();
+            movie.Title = nfoMovie.title;
+            movie.Title2 = nfoMovie.title;
+            movie.SubTitle = nfoMovie.originaltitle;
+            movie.Year = (int)(nfoMovie.year == null ? 1971 : nfoMovie.year);
+            movie.Date = nfoMovie.releasedate?.ToString("yyyy-MM-dd");
+            movie.Summary = nfoMovie.plot;
+            movie.MetaJson = "{}";
+            movie.Actor = new List<string>();
+            if (nfoMovie.actor != null)
+            {
+                foreach (var actor in nfoMovie.actor)
+                {
+                    if (actor.name != null && actor.type?.ToLower() == "actor") movie.Actor.Add(actor.name);
+                }
+            }
+            movie.Director = nfoMovie.director;
+            movie.Category = nfoMovie.genre;
+            movie.FilmDistributor = nfoMovie.studio?.GetString(',');
+            movie.Level = nfoMovie.mpaa;
+            movie.Score = nfoMovie.rating;
+
+            if (movie.Images == null) movie.Images = new ImageInfo();
+            using BinaryReader fs = new(File.Open(file.DirectoryName + "\\poster.jpg", FileMode.Open));
+            movie.Images.Episode = fs.ReadBytes((int)fs.BaseStream.Length);
+            using BinaryReader fsb = new(File.Open(file.DirectoryName + "\\backdrop.jpg", FileMode.Open));
+            movie.Images.Backdrop = fsb.ReadBytes((int)fsb.BaseStream.Length);
+            movie.Locked = true;
+            MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
+            //调试输出(“输出VSMETA：” ＋ movie_path ＋ “\” ＋ vsmeta_outfile ＋ “.vsmeta”)
+
         }
 
         internal class MovieInformation : IMovieInformation
@@ -447,13 +483,12 @@ namespace JavDB.Client
     {
         public static void Output(string filename, FilmInformation film)
         {
-            FileInfo file = new FileInfo(filename);
             movie movie = new movie();
             movie.plot = film.Title;
             movie.lockdata = false;
             movie.dateadded = DateTime.Parse(film.GrabTime);
             movie.title = film.UID;
-            movie.originaltitle = film.Title;
+            movie.originaltitle = film.UID;
             movie.director = film.Director;
             // movie.writer = null;
             movie.trailer = new List<string> { film.PreviewVideo };
@@ -471,7 +506,7 @@ namespace JavDB.Client
             }
             movie.studio = new List<string> { film.FilmDistributor };
 
-            movie.actors = new List<actor>();
+            movie.actor = new List<actor>();
             short index = 0;
             foreach (FilmActor actor in film.Actor)
             {
@@ -483,16 +518,10 @@ namespace JavDB.Client
                     act.type = "Actor";
                     act.sortorder = index;
                     index++;
-                    movie.actors.Add(act);
+                    movie.actor.Add(act);
                 }
             }
-            using (FileStream fs = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-            {
-                byte[] buffer = Encoding.UTF8.GetBytes(movie.ToString());
-                fs.SetLength(0);
-                fs.Write(buffer, 0, buffer.Length);
-                fs.Close();
-            }
+            movie.Write(filename, movie);
             //MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
             //调试输出(“输出VSMETA：” ＋ movie_path ＋ “\” ＋ vsmeta_outfile ＋ “.vsmeta”)
             //Process.Start("Explorer", $" /select,\"{filename}\"");

@@ -12,7 +12,7 @@ namespace JavDB.Extentions.Nfo
         public string? name { get; set; }
         public string? role { get; set; }
         public string? type { get; set; }
-        public short sortorder { get; set; }
+        public int sortorder { get; set; }
         public string? thumb { get; set; }
         public override string ToString()
         {
