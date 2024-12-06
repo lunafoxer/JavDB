@@ -41,8 +41,12 @@
             menuItemCopyUID = new ToolStripMenuItem();
             menuItemCopyActor = new ToolStripMenuItem();
             menuItemCopyJson = new ToolStripMenuItem();
-            menuItemFilter = new ToolStripMenuItem();
             tabControl1 = new TabControl();
+            tabPage1 = new TabPage();
+            btnSearch = new Button();
+            label9 = new Label();
+            txtUID = new TextBox();
+            txtURL0 = new TextBox();
             tabPage3 = new TabPage();
             btnStartPollingFile = new Button();
             btnLoadFile = new Button();
@@ -56,9 +60,9 @@
             btnPageUp = new Button();
             label5 = new Label();
             txtPageManual = new TextBox();
-            txtURL = new TextBox();
+            txtURL1 = new TextBox();
             tabPage4 = new TabPage();
-            btnLoadActorUrl = new Button();
+            btnLoadPageAuto = new Button();
             label8 = new Label();
             txtPageAuto = new TextBox();
             txtURL2 = new TextBox();
@@ -93,8 +97,14 @@
             statusLabel = new ToolStripStatusLabel();
             toolStripSeparator2 = new ToolStripSeparator();
             lblCount = new ToolStripStatusLabel();
+            cbbFlag = new ComboBox();
+            label1 = new Label();
+            label2 = new Label();
+            txtFindText = new TextBox();
+            btnFind = new Button();
             contextMenuStrip1.SuspendLayout();
             tabControl1.SuspendLayout();
+            tabPage1.SuspendLayout();
             tabPage3.SuspendLayout();
             tabPage2.SuspendLayout();
             tabPage4.SuspendLayout();
@@ -107,62 +117,62 @@
             // 
             // contextMenuStrip1
             // 
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemIndex, menuItemBackdrop, menuItemPreviewVideo, menuItemMagent, toolStripMenuItem1, menuItemSeriesNumber, menuItemActor, menuItemCopy, menuItemFilter });
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemIndex, menuItemBackdrop, menuItemPreviewVideo, menuItemMagent, toolStripMenuItem1, menuItemSeriesNumber, menuItemActor, menuItemCopy });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(181, 208);
+            contextMenuStrip1.Size = new Size(137, 164);
             contextMenuStrip1.Opening += contextMenuStrip1_Opening;
             // 
             // menuItemIndex
             // 
             menuItemIndex.Name = "menuItemIndex";
-            menuItemIndex.Size = new Size(180, 22);
+            menuItemIndex.Size = new Size(136, 22);
             menuItemIndex.Text = "主页";
             menuItemIndex.Click += menuItemIndex_Click;
             // 
             // menuItemBackdrop
             // 
             menuItemBackdrop.Name = "menuItemBackdrop";
-            menuItemBackdrop.Size = new Size(180, 22);
+            menuItemBackdrop.Size = new Size(136, 22);
             menuItemBackdrop.Text = "海报";
             menuItemBackdrop.Click += menuItemBackdrop_Click;
             // 
             // menuItemPreviewVideo
             // 
             menuItemPreviewVideo.Name = "menuItemPreviewVideo";
-            menuItemPreviewVideo.Size = new Size(180, 22);
+            menuItemPreviewVideo.Size = new Size(136, 22);
             menuItemPreviewVideo.Text = "视频预览";
             menuItemPreviewVideo.Click += menuItemPreviewVideo_Click;
             // 
             // menuItemMagent
             // 
             menuItemMagent.Name = "menuItemMagent";
-            menuItemMagent.Size = new Size(180, 22);
+            menuItemMagent.Size = new Size(136, 22);
             menuItemMagent.Text = "磁力链接";
             menuItemMagent.Click += menuItemMagent_Click;
             // 
             // toolStripMenuItem1
             // 
             toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(177, 6);
+            toolStripMenuItem1.Size = new Size(133, 6);
             // 
             // menuItemSeriesNumber
             // 
             menuItemSeriesNumber.Name = "menuItemSeriesNumber";
-            menuItemSeriesNumber.Size = new Size(180, 22);
+            menuItemSeriesNumber.Size = new Size(136, 22);
             menuItemSeriesNumber.Text = "按系列搜索";
             menuItemSeriesNumber.Click += menuItemSeriesNumber_Click;
             // 
             // menuItemActor
             // 
             menuItemActor.Name = "menuItemActor";
-            menuItemActor.Size = new Size(180, 22);
+            menuItemActor.Size = new Size(136, 22);
             menuItemActor.Text = "按主演搜索";
             // 
             // menuItemCopy
             // 
             menuItemCopy.DropDownItems.AddRange(new ToolStripItem[] { menuItemCopyUID, menuItemCopyActor, menuItemCopyJson });
             menuItemCopy.Name = "menuItemCopy";
-            menuItemCopy.Size = new Size(180, 22);
+            menuItemCopy.Size = new Size(136, 22);
             menuItemCopy.Text = "复制";
             // 
             // menuItemCopyUID
@@ -186,14 +196,9 @@
             menuItemCopyJson.Text = "Json";
             menuItemCopyJson.Click += menuItemCopyJson_Click;
             // 
-            // menuItemFilter
-            // 
-            menuItemFilter.Name = "menuItemFilter";
-            menuItemFilter.Size = new Size(180, 22);
-            menuItemFilter.Text = "筛选";
-            // 
             // tabControl1
             // 
+            tabControl1.Controls.Add(tabPage1);
             tabControl1.Controls.Add(tabPage3);
             tabControl1.Controls.Add(tabPage2);
             tabControl1.Controls.Add(tabPage4);
@@ -203,6 +208,60 @@
             tabControl1.Size = new Size(1396, 74);
             tabControl1.TabIndex = 7;
             tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
+            // 
+            // tabPage1
+            // 
+            tabPage1.Controls.Add(btnSearch);
+            tabPage1.Controls.Add(label9);
+            tabPage1.Controls.Add(txtUID);
+            tabPage1.Controls.Add(txtURL0);
+            tabPage1.Location = new Point(4, 26);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(1388, 44);
+            tabPage1.TabIndex = 4;
+            tabPage1.Text = "按番号";
+            tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // btnSearch
+            // 
+            btnSearch.Enabled = false;
+            btnSearch.Location = new Point(606, 8);
+            btnSearch.Name = "btnSearch";
+            btnSearch.Size = new Size(26, 27);
+            btnSearch.TabIndex = 30;
+            btnSearch.Text = "√";
+            btnSearch.UseVisualStyleBackColor = true;
+            btnSearch.Click += btnSearch_Click;
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(10, 13);
+            label9.Name = "label9";
+            label9.Size = new Size(44, 17);
+            label9.TabIndex = 29;
+            label9.Text = "地址：";
+            // 
+            // txtUID
+            // 
+            txtUID.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            txtUID.AutoCompleteSource = AutoCompleteSource.CustomSource;
+            txtUID.Location = new Point(281, 10);
+            txtUID.Name = "txtUID";
+            txtUID.Size = new Size(319, 23);
+            txtUID.TabIndex = 28;
+            txtUID.TextChanged += txtUID_TextChanged;
+            txtUID.KeyDown += txtUID_KeyDown;
+            // 
+            // txtURL0
+            // 
+            txtURL0.Location = new Point(60, 10);
+            txtURL0.Name = "txtURL0";
+            txtURL0.ReadOnly = true;
+            txtURL0.Size = new Size(223, 23);
+            txtURL0.TabIndex = 31;
+            txtURL0.Text = "https://javdb.com";
             // 
             // tabPage3
             // 
@@ -264,7 +323,7 @@
             tabPage2.Controls.Add(btnPageUp);
             tabPage2.Controls.Add(label5);
             tabPage2.Controls.Add(txtPageManual);
-            tabPage2.Controls.Add(txtURL);
+            tabPage2.Controls.Add(txtURL1);
             tabPage2.Location = new Point(4, 26);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
@@ -346,18 +405,18 @@
             txtPageManual.TextChanged += txtPageManual_TextChanged;
             txtPageManual.KeyDown += txtPage_KeyDown;
             // 
-            // txtURL
+            // txtURL1
             // 
-            txtURL.Location = new Point(60, 10);
-            txtURL.Name = "txtURL";
-            txtURL.ReadOnly = true;
-            txtURL.Size = new Size(154, 23);
-            txtURL.TabIndex = 21;
-            txtURL.Text = "https://javdb.com";
+            txtURL1.Location = new Point(60, 10);
+            txtURL1.Name = "txtURL1";
+            txtURL1.ReadOnly = true;
+            txtURL1.Size = new Size(154, 23);
+            txtURL1.TabIndex = 21;
+            txtURL1.Text = "https://javdb.com";
             // 
             // tabPage4
             // 
-            tabPage4.Controls.Add(btnLoadActorUrl);
+            tabPage4.Controls.Add(btnLoadPageAuto);
             tabPage4.Controls.Add(label8);
             tabPage4.Controls.Add(txtPageAuto);
             tabPage4.Controls.Add(txtURL2);
@@ -369,15 +428,15 @@
             tabPage4.Text = "按地址(自动)";
             tabPage4.UseVisualStyleBackColor = true;
             // 
-            // btnLoadActorUrl
+            // btnLoadPageAuto
             // 
-            btnLoadActorUrl.Location = new Point(537, 8);
-            btnLoadActorUrl.Name = "btnLoadActorUrl";
-            btnLoadActorUrl.Size = new Size(26, 27);
-            btnLoadActorUrl.TabIndex = 26;
-            btnLoadActorUrl.Text = "√";
-            btnLoadActorUrl.UseVisualStyleBackColor = true;
-            btnLoadActorUrl.Click += btnLoadActorUrl_Click;
+            btnLoadPageAuto.Location = new Point(537, 8);
+            btnLoadPageAuto.Name = "btnLoadPageAuto";
+            btnLoadPageAuto.Size = new Size(26, 27);
+            btnLoadPageAuto.TabIndex = 26;
+            btnLoadPageAuto.Text = "√";
+            btnLoadPageAuto.UseVisualStyleBackColor = true;
+            btnLoadPageAuto.Click += btnLoadActorUrl_Click;
             // 
             // label8
             // 
@@ -549,11 +608,11 @@
             listInfo.Font = new Font("Microsoft YaHei UI", 10.5F, FontStyle.Regular, GraphicsUnit.Point);
             listInfo.FullRowSelect = true;
             listInfo.GridLines = true;
-            listInfo.Location = new Point(5, 159);
+            listInfo.Location = new Point(5, 190);
             listInfo.MultiSelect = false;
             listInfo.Name = "listInfo";
             listInfo.ShowItemToolTips = true;
-            listInfo.Size = new Size(1396, 530);
+            listInfo.Size = new Size(1396, 499);
             listInfo.TabIndex = 17;
             listInfo.UseCompatibleStateImageBehavior = false;
             listInfo.View = View.Details;
@@ -650,11 +709,62 @@
             lblCount.Size = new Size(47, 18);
             lblCount.Text = "共 0 条";
             // 
+            // cbbFlag
+            // 
+            cbbFlag.DropDownStyle = ComboBoxStyle.DropDownList;
+            cbbFlag.FlatStyle = FlatStyle.System;
+            cbbFlag.FormattingEnabled = true;
+            cbbFlag.Location = new Point(103, 160);
+            cbbFlag.Name = "cbbFlag";
+            cbbFlag.Size = new Size(170, 25);
+            cbbFlag.TabIndex = 25;
+            cbbFlag.SelectedIndexChanged += cbbFlag_SelectedIndexChanged;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(17, 163);
+            label1.Name = "label1";
+            label1.Size = new Size(68, 17);
+            label1.TabIndex = 26;
+            label1.Text = "筛选标签：";
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(292, 163);
+            label2.Name = "label2";
+            label2.Size = new Size(68, 17);
+            label2.TabIndex = 27;
+            label2.Text = "查找文本：";
+            // 
+            // txtFindText
+            // 
+            txtFindText.Location = new Point(366, 160);
+            txtFindText.Name = "txtFindText";
+            txtFindText.Size = new Size(335, 23);
+            txtFindText.TabIndex = 28;
+            // 
+            // btnFind
+            // 
+            btnFind.Location = new Point(716, 158);
+            btnFind.Name = "btnFind";
+            btnFind.Size = new Size(102, 27);
+            btnFind.TabIndex = 29;
+            btnFind.Text = "查找";
+            btnFind.UseVisualStyleBackColor = true;
+            btnFind.Click += btnFind_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1413, 754);
+            Controls.Add(btnFind);
+            Controls.Add(txtFindText);
+            Controls.Add(label2);
+            Controls.Add(label1);
+            Controls.Add(cbbFlag);
             Controls.Add(btnSortScore);
             Controls.Add(statusStrip1);
             Controls.Add(btnSaveUIDList);
@@ -671,6 +781,8 @@
             Load += Form1_Load;
             contextMenuStrip1.ResumeLayout(false);
             tabControl1.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
+            tabPage1.PerformLayout();
             tabPage3.ResumeLayout(false);
             tabPage3.PerformLayout();
             tabPage2.ResumeLayout(false);
@@ -736,13 +848,13 @@
         private TextBox txtPageValue;
         private Label label6;
         private NumericUpDown numExpirationTime;
-        private TextBox txtURL;
+        private TextBox txtURL1;
         private ToolStripMenuItem menuItemCopyJson;
         private ToolStripMenuItem menuItemIndex;
         private TabPage tabPage4;
         private Label label8;
         private TextBox txtURL2;
-        private Button btnLoadActorUrl;
+        private Button btnLoadPageAuto;
         private TextBox txtPageAuto;
         private StatusStrip statusStrip1;
         private ToolStripStatusLabel toolStripStatusLabel1;
@@ -752,6 +864,15 @@
         private ToolStripStatusLabel lblCount;
         private ToolStripMenuItem menuItemSeriesNumber;
         private ToolStripSeparator toolStripMenuItem1;
-        private ToolStripMenuItem menuItemFilter;
+        private ComboBox cbbFlag;
+        private Label label1;
+        private Label label2;
+        private TextBox txtFindText;
+        private Button btnFind;
+        private TabPage tabPage1;
+        private Button btnSearch;
+        private Label label9;
+        private TextBox txtUID;
+        private TextBox txtURL0;
     }
 }

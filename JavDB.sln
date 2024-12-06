@@ -15,7 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JavDB.Polling", "JavDB.Poll
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Synology.VideoStation.Meta", "..\Synology\Synology.VideoStation.Meta\Synology.VideoStation.Meta.csproj", "{B4D56441-494B-4E12-85BE-FDE816D39C72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavDB.Extentions.Nfo", "JavDB.Extentions.Nfo\JavDB.Extentions.Nfo.csproj", "{9F67E585-29C6-440E-B0F2-49005A6C1D40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JavDB.Extentions.Nfo", "JavDB.Extentions.Nfo\JavDB.Extentions.Nfo.csproj", "{9F67E585-29C6-440E-B0F2-49005A6C1D40}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavDB.Docker", "JavDB.Docker\JavDB.Docker.csproj", "{A66F4166-9D33-4553-BEFF-9B341EAAFA1C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{9F67E585-29C6-440E-B0F2-49005A6C1D40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F67E585-29C6-440E-B0F2-49005A6C1D40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F67E585-29C6-440E-B0F2-49005A6C1D40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A66F4166-9D33-4553-BEFF-9B341EAAFA1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A66F4166-9D33-4553-BEFF-9B341EAAFA1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A66F4166-9D33-4553-BEFF-9B341EAAFA1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A66F4166-9D33-4553-BEFF-9B341EAAFA1C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

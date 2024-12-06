@@ -15,6 +15,7 @@ namespace JavDB.Polling
         public byte Mode { get; set; } = 0;
         public string[] AutoComplete { get; set; } = new string[2] { "/video_codes/", "/actors/" };
         public double Score { get; set; } = 8.0;
+        public string Player { get; set; } = "http://m.karevin.cn:5100/res/player.htm";
         private ushort mExpirationTime = 720;
         public ushort ExpirationTime
         {

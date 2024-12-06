@@ -1,0 +1,2 @@
+docker build -t karevin/javdb.docker:1.0.1 .
+docker run -d --name javdb.docker -e INTERVAL="300000" -v /video:/video karevin/javdb.docker:1.0.1

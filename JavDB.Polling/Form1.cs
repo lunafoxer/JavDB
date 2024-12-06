@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using static System.Formats.Asn1.AsnWriter;
 using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.ListView;
+using static System.Windows.Forms.ListViewItem;
 
 namespace JavDB.Polling
 {
@@ -21,12 +22,11 @@ namespace JavDB.Polling
     {
         private Config mConfig;
         private Grappler mGrap;
-        private string m_Player = "file:///" + Path.Combine(Application.StartupPath, "player.htm");
         private List<FilmInformation>? mFilms;
-        private List<CategoryEntity>? mCategory;
         private bool mPolling = false;
         private int mPageValue = 1;
         private string? m_PageUrl = null;
+        private int mStartIndex = 0;
         private int mPage
         {
             get => mPageValue;
@@ -82,7 +82,8 @@ namespace JavDB.Polling
         {
             numDelay.Value = mConfig.Delay;
             numExpirationTime.Value = mConfig.ExpirationTime;
-            txtURL.Text = mGrap.SRC;
+            txtURL0.Text = mGrap.SRC + "/search?q=";
+            txtURL1.Text = mGrap.SRC;
             txtURL2.Text = mGrap.SRC;
             if (mConfig.Mode == 0)
             {
@@ -111,6 +112,9 @@ namespace JavDB.Polling
             listInfo.Enabled = !value;
             btnSortScore.Enabled = !value;
             btnSaveUIDList.Enabled = !value;
+            cbbFlag.Enabled = !value;
+            txtFindText.Enabled = !value;
+            btnFind.Enabled = !value;
             lblCount.Text = $"共 {(mFilms == null ? "0" : mFilms.Count)} 条";
             statusLabel.Text = value ? "正在加载" : "已就绪";
         }
@@ -178,72 +182,16 @@ namespace JavDB.Polling
                 MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
-        private void initFilter()
+        private void initFilter(ComboBox cbb, List<FilterEntity> filters)
         {
-            menuItemFilter.DropDownItems.Clear();
             if (mFilms == null) return;
-            if (mCategory != null)
+            cbb.Items.Clear();
+            if (filters != null)
             {
-                ToolStripMenuItem item = new ToolStripMenuItem($"全部({mFilms.Count})");
-                item.Click += (_, _) =>
+                cbb.Items.Add($"全部({mFilms.Count})");
+                foreach (var f in filters)
                 {
-                    if (mFilms == null) return;
-                    listInfo.Items.Clear();
-                    progressBar1.Value = 0;
-                    Application.DoEvents();
-                    new Thread(() =>
-                    {
-                        mPolling = true;
-                        this.Invoke(new startPollingDelegate(startPolling), true);
-                        int i = 0;
-                        foreach (var it in mFilms)
-                        {
-                            if (mPolling == false) break;
-                            this.Invoke(new addItemDelegate(addItem), i, it.Index.IsNullOrEmpty() ? "抓取失败" : "抓取成功", it);
-                            i++;
-                            this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)i / mFilms.Count * 100));
-                        }
-                        mPolling = false;
-                        this.Invoke(new startPollingDelegate(startPolling), false);
-                    })
-                    { IsBackground = true }.Start();
-                };
-                menuItemFilter.DropDownItems.Add(item);
-
-                menuItemFilter.DropDownItems.Add(new ToolStripSeparator());
-
-                foreach (var c in mCategory)
-                {
-                    item = new ToolStripMenuItem(c.ToString());
-                    item.Click += (_, _) =>
-                    {
-                        if (mFilms == null) return;
-                        listInfo.Items.Clear();
-                        progressBar1.Value = 0;
-                        Application.DoEvents();
-                        new Thread(() =>
-                        {
-                            mPolling = true;
-                            this.Invoke(new startPollingDelegate(startPolling), true);
-                            int i = 0, j = 0;
-                            foreach (var it in mFilms)
-                            {
-                                if (mPolling == false) break;
-                                if (it.Category?.GetString(',')?.IndexOf(c.Name) >= 0)
-                                {
-                                    this.Invoke(new addItemDelegate(addItem), i, it.Index.IsNullOrEmpty() ? "抓取失败" : "抓取成功", it);
-                                    i++;
-                                }
-                                j++;
-                                this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)j / mFilms.Count * 100));
-                            }
-                            mPolling = false;
-                            this.Invoke(new startPollingDelegate(startPolling), false);
-                        })
-                        { IsBackground = true }.Start();
-
-                    };
-                    menuItemFilter.DropDownItems.Add(item);
+                    cbb.Items.Add(f.ToString());
                 }
             }
         }
@@ -279,7 +227,7 @@ namespace JavDB.Polling
                                 item = new ToolStripMenuItem(act.ToString());
                                 item.Click += (_, _) =>
                                 {
-                                    tabControl1.SelectedIndex = 2;
+                                    tabControl1.SelectedIndex = 3;
                                     txtPageAuto.Text = act.Url;
                                     loadPage(txtURL2.Text + act.Url, 1, true);
                                 };
@@ -324,7 +272,8 @@ namespace JavDB.Polling
                 if (film != null && film.PreviewVideo != null)
                 {
                     Process process = new Process();
-                    ProcessStartInfo processStartInfo = new ProcessStartInfo($"{m_Player}?url={film.PreviewVideo}&muted=true&poster={film.Backdrop}");
+                    //ProcessStartInfo processStartInfo = new ProcessStartInfo($"{m_Player}?url={film.PreviewVideo}&muted=true&poster={film.Backdrop}");
+                    ProcessStartInfo processStartInfo = new ProcessStartInfo($"{mConfig.Player}?url={film.PreviewVideo}&muted=true&poster={film.Backdrop}");
                     process.StartInfo = processStartInfo;
                     process.StartInfo.UseShellExecute = true;
                     process.Start();
@@ -380,26 +329,26 @@ namespace JavDB.Polling
         {
             if (e.KeyCode == Keys.Enter && !string.IsNullOrEmpty(txtPageManual.Text))
             {
-                loadPage($"{txtURL.Text}{txtPageManual.Text}", 1, false);
+                loadPage($"{txtURL1.Text}{txtPageManual.Text}", 1, false);
             }
         }
         private void btnLoadPage_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(txtPageManual.Text))
             {
-                loadPage($"{txtURL.Text}{txtPageManual.Text}", 1, false);
+                loadPage($"{txtURL1.Text}{txtPageManual.Text}", 1, false);
             }
         }
         private void btnPageUp_Click(object sender, EventArgs e)
         {
             mPage--;
-            loadPage($"{txtURL.Text}{txtPageManual.Text}", mPage, false);
+            loadPage($"{txtURL1.Text}{txtPageManual.Text}", mPage, false);
         }
 
         private void btnPageDown_Click(object sender, EventArgs e)
         {
             mPage++;
-            loadPage($"{txtURL.Text}{txtPageManual.Text}", mPage, false);
+            loadPage($"{txtURL1.Text}{txtPageManual.Text}", mPage, false);
         }
         private void btnSaveUIDList_Click(object sender, EventArgs e)
         {
@@ -427,7 +376,7 @@ namespace JavDB.Polling
                     {
                         if (mode != true)
                         {
-                            sr.WriteLine("#Page: " + (tabControl1.SelectedIndex == 0 ? m_PageUrl : txtPageManual.Text));
+                            sr.WriteLine("#Page: " + (tabControl1.SelectedIndex == 1 ? m_PageUrl : txtPageManual.Text));
                         }
                         foreach (ListViewItem it in listInfo.Items)
                         {
@@ -466,7 +415,8 @@ namespace JavDB.Polling
                 saveConfig();
                 listInfo.Items.Clear();
                 mFilms = new List<FilmInformation>();
-                List<string> cate = new List<string>();
+                List<string?> cate = new List<string?>();
+                //List<string?> score = new List<string?>();
                 progressBar1.Value = 0;
                 Application.DoEvents();
                 new Thread(() =>
@@ -520,6 +470,7 @@ namespace JavDB.Polling
                             {
                                 mFilms[i] = film;
                                 cate.AddRange(film.Category);
+                                //score.Add(film.Score);
                                 this.Invoke(new updateItemDelegate(updateItem), i, "抓取成功", film);
                             }
                         }
@@ -530,8 +481,11 @@ namespace JavDB.Polling
                         this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)(i + 1) / mFilms.Count * 100));
                     }
                     mPolling = false;
-                    mCategory = CategoryEntity.Parse(cate);
-                    initFilter();
+                    this.Invoke(() =>
+                    {
+                        initFilter(cbbFlag, FilterEntity.Parse(cate));
+                        //initFilter(cbbScore, FilterEntity.Parse(score));
+                    });
                     this.Invoke(new startPollingDelegate(startPolling), false);
                 })
                 { IsBackground = true }.Start();
@@ -619,7 +573,7 @@ namespace JavDB.Polling
                         return;
                     }
                     txtPageValue.Text = result.ToString();
-                    loadPage($"{txtURL.Text}{txtPageManual.Text}", result);
+                    loadPage($"{txtURL1.Text}{txtPageManual.Text}", result);
                     mPage = result;
                 }
                 else
@@ -712,7 +666,8 @@ namespace JavDB.Polling
                 if (url.IndexOf("page=") >= 0)
                     throw new UriFormatException("地址参数不能包括page.");
                 List<FilmInformation> films = new List<FilmInformation>();
-                List<string> cate = new List<string>();
+                List<string?> cate = new List<string?>();
+                //List<string?> score = new List<string?>();
                 new Thread(() =>
                 {
                     try
@@ -742,6 +697,7 @@ namespace JavDB.Polling
                                     this.Invoke(new addItemDelegate(addItem), films.Count + i, "等待中", pageFilms[i]);
                                     string file = Path.Combine(mConfig.CachePath, pageFilms[i].SeriesNumber!, pageFilms[i].UID!, pageFilms[i].UID + ".json");
                                     cate.AddRange(pageFilms[i].Category);
+                                    //score.Add(pageFilms[i].Score);
                                     if (!File.Exists(file))
                                     {
                                         MakeSureDirectoryPathExists(file);
@@ -774,6 +730,7 @@ namespace JavDB.Polling
                                 {
                                     mFilms[i] = film;
                                     cate.AddRange(film.Category);
+                                    //score.Add(film.Score);
                                     this.Invoke(new updateItemDelegate(updateItem), i, "抓取成功", film);
                                 }
                             }
@@ -788,8 +745,11 @@ namespace JavDB.Polling
                     finally
                     {
                         this.Invoke(new startPollingDelegate(startPolling), false);
-                        mCategory = CategoryEntity.Parse(cate);
-                        initFilter();
+                        this.Invoke(() =>
+                        {
+                            initFilter(cbbFlag, FilterEntity.Parse(cate));
+                            //initFilter(cbbScore, FilterEntity.Parse(score));
+                        });
                         mPolling = false;
                     }
                 })
@@ -922,15 +882,161 @@ namespace JavDB.Polling
                 {
                     FilmInformation film = (FilmInformation)s[0].Tag;
                     if (film == null) return;
-                    //https://javdb522.com/video_codes/IDBD
-                    tabControl1.SelectedIndex = 1;
+                    tabControl1.SelectedIndex = 2;
                     txtPageManual.Text = "/video_codes/" + film.SeriesNumber;
-                    loadPage($"{txtURL.Text}{txtPageManual.Text}");
+                    loadPage($"{txtURL1.Text}{txtPageManual.Text}");
                 }
             }
             catch (Exception e1)
             {
                 MessageBox.Show(e1.Message, "失败", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+        }
+
+        private void cbbFlag_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (mFilms == null) return;
+            List<string?> filterNames = new List<string?>();
+            foreach (var it in mFilms)
+            {
+                filterNames.Add(it.Category?.GetString(',') + ",");
+            }
+            FilterFilm(cbbFlag, filterNames);
+        }
+
+        private void btnFind_Click(object sender, EventArgs e)
+        {
+            if (mFilms == null || listInfo.Items.Count == 0) return;
+            if (mStartIndex >= listInfo.Items.Count) mStartIndex = 0;
+            var item = FindListViewItem(listInfo, txtFindText.Text, true, mStartIndex);
+            if (!item)
+            {
+                MessageBox.Show("未找到符合条件的项目。", "查找文本", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        private bool FindListViewItem(ListView listView, string textToFind, bool searchSubitem, int startIndex = 0)
+        {
+            if (startIndex >= listView.Items.Count) startIndex = 0;
+            for (int i = startIndex; i < listView.Items.Count; i++)
+            {
+                if (searchSubitem)
+                {
+                    foreach (ListViewSubItem item in listView.Items[i].SubItems)
+                    {
+                        if (item.Text.Contains(textToFind))
+                        {
+                            // 找到匹配的项，可以在这里执行特定操作
+                            // 例如，选中找到的项
+                            listView.Items[i].Selected = true;
+                            listView.Items[i].Focused = true;
+                            listView.Focus();
+                            mStartIndex = listView.Items[i].Index + 1;
+                            listView.EnsureVisible(listView.Items[i].Index);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    if (listView.Items[i].Text.Contains(textToFind))
+                    {
+                        // 找到匹配的项，可以在这里执行特定操作
+                        // 例如，选中找到的项
+                        listView.Items[i].Selected = true;
+                        listView.Items[i].Focused = true;
+                        listView.Focus();
+                        mStartIndex = listView.Items[i].Index + 1;
+                        listView.EnsureVisible(listView.Items[i].Index);
+                        return true;
+                    }
+                }
+            }
+            mStartIndex = 0;
+            return false;
+        }
+
+        private void cbbActor_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (mFilms == null) return;
+            List<string?> filterNames = new List<string?>();
+            foreach (var it in mFilms)
+            {
+                filterNames.Add(it.Score + ",");
+                //filterNames.Add(it.Actor.GetActorNames(Gender.WOMAN)?.GetString(',') + ",");
+            }
+            //FilterFilm(cbbScore, filterNames, true);
+        }
+        private void FilterFilm(ComboBox filterBox, List<string?> filterNames, bool fullMatch = false)
+        {
+            if (mFilms == null) return;
+            if (filterBox.SelectedIndex == 0)
+            {
+                listInfo.Items.Clear();
+                progressBar1.Value = 0;
+                Application.DoEvents();
+                new Thread(() =>
+                {
+                    mPolling = true;
+                    this.Invoke(new startPollingDelegate(startPolling), true);
+                    int i = 0;
+                    foreach (var it in mFilms)
+                    {
+                        if (mPolling == false) break;
+                        this.Invoke(new addItemDelegate(addItem), i, it.Index.IsNullOrEmpty() ? "抓取失败" : "抓取成功", it);
+                        i++;
+                        this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)i / mFilms.Count * 100));
+                    }
+                    mPolling = false;
+                    this.Invoke(new startPollingDelegate(startPolling), false);
+                })
+                { IsBackground = true }.Start();
+            }
+            else
+            {
+                listInfo.Items.Clear();
+                progressBar1.Value = 0;
+                Application.DoEvents();
+                string filterName = filterBox.SelectedItem.ToString()?.Split('(')[0] + ",";
+                if (string.IsNullOrEmpty(filterName) || filterName == ",") return;
+                new Thread(() =>
+                {
+                    mPolling = true;
+                    this.Invoke(new startPollingDelegate(startPolling), true);
+                    int j = 0;
+                    for (int i = 0; i < filterNames.Count; i++)
+                    {
+                        if (mPolling == false) break;
+                        if (filterNames[i] != null && ((filterNames[i]?.Contains(filterName) == true && !fullMatch) || (filterNames[i]?.Equals(filterName) == true && fullMatch)))
+                        {
+                            this.Invoke(new addItemDelegate(addItem), j, mFilms[i].Index.IsNullOrEmpty() ? "抓取失败" : "抓取成功", mFilms[i]);
+                            j++;
+                        }
+                        this.Invoke(new progressValueChangeDelegate(progressValueChange), (int)((double)(i + 1) / mFilms.Count * 100));
+                    }
+                    mPolling = false;
+                    this.Invoke(new startPollingDelegate(startPolling), false);
+                })
+                { IsBackground = true }.Start();
+            }
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(txtUID.Text))
+            {
+                loadPage($"{txtURL0.Text}{txtUID.Text}", 1, false);
+            }
+        }
+
+        private void txtUID_TextChanged(object sender, EventArgs e)
+        {
+            btnSearch.Enabled = txtUID.Text.Length > 0;
+        }
+        private void txtUID_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (txtUID.Text.Length > 0 && e.KeyCode == Keys.Enter)
+            {
+                btnSearch_Click(sender, new EventArgs());
             }
         }
     }
@@ -944,7 +1050,7 @@ namespace JavDB.Polling
             UpdateStyles();
         }
     }
-    internal class CategoryEntity : IComparable<CategoryEntity>
+    internal class FilterEntity : IComparable<FilterEntity>
     {
         public string Name { get; set; } = string.Empty;
         public int Count { get; set; }
@@ -952,37 +1058,43 @@ namespace JavDB.Polling
         {
             return $"{Name}({Count})";
         }
-        public static List<CategoryEntity> Parse(List<string> cate)
+        public static List<FilterEntity> Parse(List<string?> filterName)
         {
-            if (cate == null) throw new ArgumentNullException(nameof(cate));
-            List<CategoryEntity> categoryEntities = new List<CategoryEntity>();
-            cate.Sort();
-            string last = string.Empty;
-            for (int i = 0; i < cate.Count; i++)
+            if (filterName == null) throw new ArgumentNullException(nameof(filterName));
+            List<FilterEntity> filterEntities = new List<FilterEntity>();
+            filterName.Sort();
+            string? last = string.Empty;
+            for (int i = 0; i < filterName.Count; i++)
             {
                 if (i == 0)
                 {
-                    categoryEntities.Add(new CategoryEntity() { Name = cate[i], Count = 1 });
-                    last = cate[i];
+                    if (!string.IsNullOrEmpty(filterName[i]))
+                    {
+                        filterEntities.Add(new FilterEntity() { Name = filterName[i]!, Count = 1 });
+                        last = filterName[i];
+                    }
                 }
                 else
                 {
-                    if (last == cate[i])
+                    if (last == filterName[i])
                     {
-                        categoryEntities[categoryEntities.Count - 1].Count++;
+                        filterEntities[filterEntities.Count - 1].Count++;
                     }
                     else
                     {
-                        categoryEntities.Add(new CategoryEntity() { Name = cate[i], Count = 1 });
-                        last = cate[i];
+                        if (!string.IsNullOrEmpty(filterName[i]))
+                        {
+                            filterEntities.Add(new FilterEntity() { Name = filterName[i]!, Count = 1 });
+                            last = filterName[i];
+                        }
                     }
                 }
             }
-            categoryEntities.Sort();
-            return categoryEntities;
+            filterEntities.Sort();
+            return filterEntities;
         }
 
-        public int CompareTo(CategoryEntity? other)
+        public int CompareTo(FilterEntity? other)
         {
             if (other == null) return -1;
             if (this.Count > other.Count)
