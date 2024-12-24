@@ -22,6 +22,7 @@ namespace JavDB.Film
         private Config? mConfig;
         public static JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, NumberHandling = JsonNumberHandling.AllowReadingFromString, Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
         public string? SRC => mConfig?.src;
+        public Proxy? proxy => mConfig?.proxy;
         public Grappler(string configuration, double scoreMultiplier) : this(configuration)
         {
             mConfig!.scoreMultiplier = scoreMultiplier;
@@ -34,6 +35,8 @@ namespace JavDB.Film
                 throw new NullReferenceException(nameof(mConfig));
             }
         }
+        public void SetProxy(string proxyHost, int proxyPort, string userId, string password) => mConfig?.SetProxy(proxyHost, proxyPort, userId, password);
+        public void SetProxy(Proxy p) => mConfig?.SetProxy(p);
         public FilmInformation Grab(string uid, bool simple = false, bool perfectMatch = true)
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
@@ -61,13 +64,7 @@ namespace JavDB.Film
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
             if (string.IsNullOrEmpty(uid)) throw new ArgumentNullException("uid");
-            var web = new HtmlWeb()
-            {
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50"
-            };
-            //创建一个html的解析器
-            //使用解析器解析文档
-            var parser = web.Load($"{mConfig.src}/search?f=all&q={uid}");
+            var parser = LoadPage($"{mConfig.src}/search?f=all&q={uid}");
             if (parser == null)
             {
                 throw new Exception("请求网页失败");
@@ -121,11 +118,7 @@ namespace JavDB.Film
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
             if (film == null) throw new ArgumentNullException(nameof(film));
-            var web = new HtmlWeb()
-            {
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50"
-            };
-            var parser = web.Load(SRC + film.Index);
+            var parser = LoadPage(SRC + film.Index);
             var item = parser.DocumentNode.SelectSingleNode(mConfig.grab.index.path);
             if (item == null)
                 throw new Exception("解析影片详细信息失败");
@@ -218,7 +211,7 @@ namespace JavDB.Film
                     string css_url = css.GetAttributeValue("href", "");
                     if (!css_url.IsNullOrEmpty())
                     {
-                        film.Magnet= film.Magnet.Replace("#TAG_CSS_SRC#", SRC+css_url);
+                        film.Magnet = film.Magnet.Replace("#TAG_CSS_SRC#", SRC + css_url);
                     }
                 }
             }
@@ -229,15 +222,11 @@ namespace JavDB.Film
         {
             if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
             if (string.IsNullOrEmpty(pageUrl)) throw new ArgumentNullException(nameof(pageUrl));
-            var web = new HtmlWeb()
-            {
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50"
-            };
             films = new List<FilmInformation>();
             //创建一个html的解析器
             //使用解析器解析文档
             Debug.WriteLine(pageUrl);
-            var parser = web.Load(pageUrl);
+            var parser = LoadPage(pageUrl);
             //var parser = web.Load(@"e:\t.html");
             if (parser == null)
             {
@@ -295,6 +284,19 @@ namespace JavDB.Film
             string cache = sr.ReadToEnd();
             sr.Close();
             return cache;
+        }
+        private HtmlDocument LoadPage(string url)
+        {
+            if (mConfig == null) throw new NullReferenceException(nameof(mConfig));
+            var web = new HtmlWeb()
+            {
+                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50"
+            };
+            //创建一个html的解析器
+            //使用解析器解析文档
+            Debug.WriteLine(url);
+            HtmlDocument parser = !mConfig.proxy.enabled ? web.Load(url) : web.Load(url, mConfig.proxy.host, mConfig.proxy.port, mConfig.proxy.userId, mConfig.proxy.password);
+            return parser;
         }
     }
 }

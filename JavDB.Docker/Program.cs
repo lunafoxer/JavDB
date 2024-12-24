@@ -36,10 +36,12 @@ namespace JavDB.Docker
                     Interval = 300000;
                 }
             }
-            printi($"检测周期：{Interval / 1000}秒[环境变量：INTERVAL]");
             printi($"检测目录：{mConfig.ListenPath.GetString(';')}[配置文件：{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config", "listen.txt")}]");
             printi($"检测文件类型：{mConfig.FileExtensions.GetString(';')}[配置文件：{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config", "fileEx.txt")}]");
-
+            if (grappler.proxy != null && grappler.proxy.enabled)
+            {
+                printi($"代理服务器：已启用，[{grappler.proxy.ToString()}]");
+            }
             while (true)
             {
                 try
@@ -76,25 +78,32 @@ namespace JavDB.Docker
             }
             foreach (var file in files)
             {
-                FileInfo fileInfo = new FileInfo(file);
-                string uid = Path.GetFileNameWithoutExtension(fileInfo.Name).ToUpper();
-                string vsmeta = fileInfo.FullName + ".vsmeta";
-                string nfo = Path.Combine(fileInfo.Directory?.FullName, "movie.nfo");
-                if (!File.Exists(vsmeta) || !File.Exists(nfo))
+                try
                 {
-                    printi($"正在处理：{fileInfo.FullName}");
-                    string grabUID = uid.Replace(" ", "-").Replace("-CH", "").Replace("-UC", "").Replace("-U", "").Replace("-C", "");
-                    var film = grab(grappler, grabUID, fileInfo.Directory.FullName);
-                    if (film != null)
+                    FileInfo fileInfo = new FileInfo(file);
+                    string uid = Path.GetFileNameWithoutExtension(fileInfo.Name).ToUpper();
+                    string vsmeta = fileInfo.FullName + ".vsmeta";
+                    string nfo = Path.Combine(fileInfo.Directory?.FullName, "movie.nfo");
+                    if (!File.Exists(vsmeta) || !File.Exists(nfo))
                     {
-                        VSMetaFile.Output(fileInfo.FullName + ".vsmeta", film);
-                        NfoFile.Output(nfo, film);
-                        printi($"文件 {fileInfo.FullName} 处理完毕。");
+                        printi($"正在处理：{fileInfo.FullName}");
+                        string grabUID = uid.Replace(" ", "-").Replace("-CH", "").Replace("-UC", "").Replace("-U", "").Replace("-C", "");
+                        var film = grab(grappler, grabUID, fileInfo.Directory.FullName);
+                        if (film != null)
+                        {
+                            VSMetaFile.Output(fileInfo.FullName + ".vsmeta", film);
+                            NfoFile.Output(nfo, film);
+                            printi($"文件 {fileInfo.FullName} 处理完毕。");
+                        }
+                        else
+                        {
+                            printi($"文件 {fileInfo.FullName} 处理失败，请检查日志以获取错误信息。");
+                        }
                     }
-                    else
-                    {
-                        printi($"文件 {fileInfo.FullName} 处理失败，请检查日志以获取错误信息。");
-                    }
+                }
+                catch (Exception e2)
+                {
+                    e2.Error();
                 }
             }
 
@@ -273,9 +282,9 @@ namespace JavDB.Docker
             movie.Score = film.Score;
 
             if (movie.Images == null) movie.Images = new ImageInfo();
-            using BinaryReader fs = new(File.Open(file.DirectoryName + "\\poster.jpg", FileMode.Open));
+            using BinaryReader fs = new(File.Open(Path.Combine(file.DirectoryName, "poster.jpg"), FileMode.Open));
             movie.Images.Episode = fs.ReadBytes((int)fs.BaseStream.Length);
-            using BinaryReader fsb = new(File.Open(file.DirectoryName + "\\backdrop.jpg", FileMode.Open));
+            using BinaryReader fsb = new(File.Open(Path.Combine(file.DirectoryName, "backdrop.jpg"), FileMode.Open));
             movie.Images.Backdrop = fsb.ReadBytes((int)fsb.BaseStream.Length);
             movie.Locked = true;
             MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);
@@ -307,9 +316,9 @@ namespace JavDB.Docker
             movie.Score = nfoMovie.rating;
 
             if (movie.Images == null) movie.Images = new ImageInfo();
-            using BinaryReader fs = new(File.Open(file.DirectoryName + "\\poster.jpg", FileMode.Open));
+            using BinaryReader fs = new(File.Open(Path.Combine(file.DirectoryName, "poster.jpg"), FileMode.Open));
             movie.Images.Episode = fs.ReadBytes((int)fs.BaseStream.Length);
-            using BinaryReader fsb = new(File.Open(file.DirectoryName + "\\backdrop.jpg", FileMode.Open));
+            using BinaryReader fsb = new(File.Open(Path.Combine(file.DirectoryName, "backdrop.jpg"), FileMode.Open));
             movie.Images.Backdrop = fsb.ReadBytes((int)fsb.BaseStream.Length);
             movie.Locked = true;
             MetaFileStream.WriteToFile(filename, movie, META_HEAD.TAG_TYPE_MOVIE);

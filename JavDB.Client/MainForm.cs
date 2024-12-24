@@ -368,8 +368,6 @@ namespace JavDB.Client
             }
             txtUID.Focus();
         }
-
-
     }
     public class VSMetaFile
     {

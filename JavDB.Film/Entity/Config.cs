@@ -1,4 +1,6 @@
-﻿namespace JavDB.Film.Entity
+﻿using System.Text.Json;
+
+namespace JavDB.Film.Entity
 {
     internal static class baseString
     {
@@ -9,11 +11,24 @@
     {
         public string src { get; set; } = "https://javdb524.com";
         public double scoreMultiplier { get; set; }
+        public Proxy proxy { get; set; } = new Proxy();
         public GrabConfiguration grab { get; set; } = new GrabConfiguration();
         public Config(string src, double scoreMultiplier = 1.85)
         {
             this.src = src;
             this.scoreMultiplier = scoreMultiplier;
+        }
+        public void SetProxy(string proxyHost, int proxyPort, string userId, string password)
+        {
+            this.proxy = new Proxy() { enabled = true, host = proxyHost, port = proxyPort, userId = userId, password = password };
+        }
+        public void SetProxy(Proxy p)
+        {
+            this.proxy = p;
+        }
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this, Grappler.SerializerOptions);
         }
     }
     internal class GrabConfiguration
@@ -50,5 +65,17 @@
         public string path { get; set; } = "div[@class='video-meta-panel']/div/div[@class='column']/nav/div[@class='panel-block']";
         public string type { get; set; } = "strong";
 
+    }
+    public class Proxy
+    {
+        public bool enabled { get; set; } = false;
+        public string? host { get; set; }
+        public int port { get; set; } = 80;
+        public string? userId { get; set; }
+        public string? password { get; set; }
+        public override string ToString()
+        {
+            return $"{host}:{port}&userid={userId}&password={password}";
+        }
     }
 }
