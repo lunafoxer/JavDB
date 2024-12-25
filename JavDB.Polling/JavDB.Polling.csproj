@@ -9,6 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="JavDB.Film.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="JavDB.Film.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\JavDB.Film\JavDB.Film.csproj" />
   </ItemGroup>
 

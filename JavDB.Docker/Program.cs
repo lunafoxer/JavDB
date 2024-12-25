@@ -15,6 +15,7 @@ namespace JavDB.Docker
     internal class Program
     {
         private static Config mConfig = new Config();
+        private static int Delay = 3000;
         static void Main(string[] args)
         {
             printi("正在启动服务并加载配置参数...");
@@ -23,7 +24,7 @@ namespace JavDB.Docker
             int Interval = 0;
             if (string.IsNullOrEmpty(interval))
             {
-                Interval = 300000;
+                Interval = 15000;
             }
             else
             {
@@ -33,7 +34,23 @@ namespace JavDB.Docker
                 }
                 else
                 {
-                    Interval = 300000;
+                    Interval = 15000;
+                }
+            }
+            string? delay = Environment.GetEnvironmentVariable("DELAY");
+            if (string.IsNullOrEmpty(delay))
+            {
+                Delay = 3000;
+            }
+            else
+            {
+                if (int.TryParse(delay, out int intw))
+                {
+                    Delay = intw;
+                }
+                else
+                {
+                    Delay = 3000;
                 }
             }
             printi($"检测目录：{mConfig.ListenPath.GetString(';')}[配置文件：{Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config", "listen.txt")}]");
@@ -42,25 +59,25 @@ namespace JavDB.Docker
             {
                 printi($"代理服务器：已启用，[{grappler.proxy.ToString()}]");
             }
+            printi("服务已启动。");
             while (true)
             {
                 try
                 {
-                    printi("开始批处理。");
+                    //printi("开始执行任务。");
                     indexDir(grappler, mConfig.ListenPath.ToArray());
                 }
                 catch (Exception e)
                 {
                     e.Error();
                 }
-                printi($"批处理执行完毕，下次执行时间：{DateTime.Now.AddMilliseconds(Interval)}。");
+                //printi($"执行完毕，下次执行时间：{DateTime.Now.AddMilliseconds(Interval)}。");
                 Thread.Sleep(Interval);
             }
         }
         static void indexDir(Grappler grappler, string[] path)
         {
             List<string> files = new List<string>();
-
             foreach (string dir in path)
             {
                 try
@@ -94,10 +111,12 @@ namespace JavDB.Docker
                             VSMetaFile.Output(fileInfo.FullName + ".vsmeta", film);
                             NfoFile.Output(nfo, film);
                             printi($"文件 {fileInfo.FullName} 处理完毕。");
+                            Thread.Sleep(Delay);
                         }
                         else
                         {
                             printi($"文件 {fileInfo.FullName} 处理失败，请检查日志以获取错误信息。");
+                            Thread.Sleep(1000);
                         }
                     }
                 }
@@ -106,7 +125,6 @@ namespace JavDB.Docker
                     e2.Error();
                 }
             }
-
         }
         private static FilmInformation? grab(Grappler grappler, string grabUID, string dirPath)
         {
